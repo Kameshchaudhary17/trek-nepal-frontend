@@ -1,0 +1,30 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;1,500&family=DM+Sans:wght@300;400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  @keyframes auth-twinkle {
+    0%, 100% { opacity: 0.15; }
+    50% { opacity: 0.85; }
+  }
+  @keyframes auth-drift {
+    0% { transform: translate3d(0, -10vh, 0) translateX(0); opacity: 0; }
+    10% { opacity: 0.7; }
+    90% { opacity: 0.7; }
+    100% { transform: translate3d(20px, 110vh, 0) translateX(40px); opacity: 0; }
+  }
+  @keyframes auth-aurora {
+    0%, 100% { transform: translateX(-10%) scaleY(1); opacity: 0.35; }
+    50% { transform: translateX(10%) scaleY(1.15); opacity: 0.55; }
+  }
+  @keyframes auth-float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+  .animate-auth-twinkle { animation: auth-twinkle 4s ease-in-out infinite; }
+  .animate-auth-drift { animation: auth-drift linear infinite; }
+  .animate-auth-aurora { animation: auth-aurora 14s ease-in-out infinite; }
+  .animate-auth-float { animation: auth-float 6s ease-in-out infinite; }
+}
