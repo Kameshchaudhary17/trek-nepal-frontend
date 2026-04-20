@@ -13,6 +13,8 @@ export default function Navbar() {
   const [open, setOpen] = useState(false);
   const location = useLocation();
   const token = localStorage.getItem("token");
+  const userRole = (() => { try { return JSON.parse(localStorage.getItem("user"))?.role; } catch { return null; } })();
+  const dashboardPath = userRole === "guide" ? "/guide/dashboard" : "/dashboard";
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
@@ -61,7 +63,7 @@ export default function Navbar() {
         <div className="hidden md:flex items-center gap-3">
           {token ? (
             <Link
-              to="/dashboard"
+              to={dashboardPath}
               className="px-4 py-2 text-[14px] bg-gradient-to-br from-[#e8c07c] to-[#a8853a] text-[#0e1a14] rounded-lg font-semibold transition-all hover:shadow-[0_4px_16px_rgba(224,184,116,0.4)] hover:-translate-y-[1px]"
             >
               Dashboard

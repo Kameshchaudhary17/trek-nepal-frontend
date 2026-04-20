@@ -23,7 +23,7 @@ export default function Login() {
         const data = await authService.googleAuth(tokenResponse.access_token);
         localStorage.setItem("token", data.token);
         localStorage.setItem("user", JSON.stringify(data.user));
-        navigate("/dashboard");
+        navigate(data.user.role === "guide" ? "/guide/dashboard" : "/dashboard");
       } catch (err) {
         setError(err.response?.data?.message || "Google sign-in failed.");
       } finally {
@@ -40,7 +40,7 @@ export default function Login() {
       const data = await authService.login(form);
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
-      navigate("/dashboard");
+      navigate(data.user.role === "guide" ? "/guide/dashboard" : "/dashboard");
     } catch (err) {
       setError(err.response?.data?.message || "Invalid email or password.");
     } finally {
