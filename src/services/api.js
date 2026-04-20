@@ -31,6 +31,13 @@ const authService = {
       headers: { Authorization: `Bearer ${token}` },
     });
   },
+
+  googleAuth(accessToken) {
+    return request('/auth/google', {
+      method: 'POST',
+      body: JSON.stringify({ accessToken }),
+    });
+  },
 };
 
 export default authService;

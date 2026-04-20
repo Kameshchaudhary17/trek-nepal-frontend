@@ -1,14 +1,66 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useGoogleLogin } from "@react-oauth/google";
 import authService from "../services/api";
 import AuthLayout from "../components/auth/AuthLayout";
+
+const SPECIALIZATIONS = [
+    "Swayambhunath (Monkey Temple)",
+  "Boudhanath Stupa",
+  "Pashupatinath Temple",
+  "Durbar Square (Kathmandu)",
+  "Changunarayan Temple",
+  "Phewa Lake",
+  "Sarangkot",
+  "World Peace Pagoda",
+  "Davis Falls",
+  "Gupteshwor Cave",
+  "Begnas Lake",
+  "Mahendra Cave",
+  "Lukla",
+  "Namche Bazaar",
+  "Tengboche Monastery",
+  "Kala Patthar",
+  "Gokyo Lakes",
+  "Annapurna Circuit",
+  "Ghorepani Poon Hill",
+  "Mardi Himal",
+  "Jomsom",
+  "Tatopani",
+  "Manang",
+  "Thorong La Pass",
+  "Kyanjin Gompa",
+  "Helambu Valley",
+  "Chitwan National Park",
+  "Bardia National Park",
+  "Tharu Cultural Village",
+  "Elephant Breeding Center",
+  "Rara Lake",
+  "Rara National Park",
+  "Khaptad National Park",
+  "Dhorpatan Hunting Reserve",
+  "Api Himal Base Camp",
+  "Saipal Himal Region",
+  "Badimalika Temple",
+  "Muktinath Temple",
+  "Janaki Temple (Janakpur)",
+  "Pathivara Temple",
+  "Manakamana Temple",
+  "Upper Mustang",
+  "Lower Mustang",
+  "Dolpo Region",
+  "Tilicho Lake",
+  "Kanchenjunga Base Camp"
+];
 
 export default function Register() {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
+  const [submitted, setSubmitted] = useState(false);
   const [form, setForm] = useState({
     fullName: "", email: "", password: "", confirmPassword: "",
     role: "trekker", phone: "",
+    licenseNumber: "", yearsExperience: "", specialization: "",
   });
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -29,6 +81,15 @@ export default function Register() {
     return Object.keys(e).length === 0;
   };
 
+  const validateStep2Guide = () => {
+    const e = {};
+    if (!form.licenseNumber.trim()) e.licenseNumber = "Nepal Tourism Board license number required";
+    if (!form.yearsExperience) e.yearsExperience = "Years of experience required";
+    if (!form.specialization) e.specialization = "Select primary specialization";
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  };
+
   const handleNext = (e) => {
     e.preventDefault();
     if (validateStep1()) setStep(2);
@@ -36,18 +97,40 @@ export default function Register() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (form.role === "guide" && !validateStep2Guide()) return;
     setLoading(true);
     try {
       const data = await authService.register(form);
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
-      navigate("/dashboard");
+      if (form.role === "guide") {
+        setSubmitted(true);
+      } else {
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("user", JSON.stringify(data.user));
+        navigate("/dashboard");
+      }
     } catch (err) {
       setErrors({ server: err.response?.data?.message || "Registration failed. Try again." });
     } finally {
       setLoading(false);
     }
   };
+
+  const handleGoogleRegister = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      setLoading(true);
+      try {
+        const data = await authService.googleAuth(tokenResponse.access_token);
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("user", JSON.stringify(data.user));
+        navigate("/dashboard");
+      } catch (err) {
+        setErrors({ server: err.response?.data?.message || "Google sign-up failed." });
+      } finally {
+        setLoading(false);
+      }
+    },
+    onError: () => setErrors({ server: "Google sign-up failed." }),
+  });
 
   const strength = (() => {
     const p = form.password;
@@ -77,18 +160,26 @@ export default function Register() {
       </p>
       <ul className="space-y-3 text-[14px] text-[#c8d0c0]/90">
         {[
-          "Vetted guides, transparent pricing",
+          "Only Nepal Tourism Board licensed guides",
           "Built-in permit & insurance checklists",
           "Offline itinerary, even above base camp",
         ].map((t) => (
           <li key={t} className="flex items-start gap-3">
-            <span className="mt-[6px] w-1.5 h-1.5 rounded-full bg-[#e0b874] shadow-[0_0_10px_#e0b874]" />
+            <span className="mt-[6px] w-1.5 h-1.5 rounded-full bg-[#e0b874] shadow-[0_0_10px_#e0b874] shrink-0" />
             {t}
           </li>
         ))}
       </ul>
     </div>
   );
+
+  if (submitted) {
+    return (
+      <AuthLayout side={side}>
+        <PendingApproval name={form.fullName} email={form.email} />
+      </AuthLayout>
+    );
+  }
 
   return (
     <AuthLayout side={side}>
@@ -168,7 +259,7 @@ export default function Register() {
                 name="email"
                 value={form.email}
                 onChange={handleChange}
-                placeholder="Your Email"
+                placeholder="you@example.com"
                 autoComplete="email"
                 className="w-full bg-white/[0.04] border border-white/10 rounded-xl py-[13px] pl-11 pr-4 font-sans text-[15px] font-light text-[#f0e4c8] outline-none transition-all placeholder:text-[#4a6050] focus:border-[#e0b874]/50 focus:bg-white/[0.08] focus:ring-[3px] focus:ring-[#e0b874]/10"
               />
@@ -253,7 +344,7 @@ export default function Register() {
 
           <button
             type="submit"
-            className="w-full mt-1.5 bg-gradient-to-br from-[#e8c07c] via-[#d0a45a] to-[#a8853a] text-[#0e1a14] rounded-xl p-[14px] font-sans text-[15px] font-semibold tracking-wide flex items-center justify-center gap-2 cursor-pointer transition-all shadow-[0_10px_30px_-8px_rgba(224,184,116,0.5)] hover:-translate-y-[1px] hover:shadow-[0_14px_36px_-8px_rgba(224,184,116,0.6)] active:translate-y-0 disabled:opacity-70 disabled:cursor-not-allowed"
+            className="w-full mt-1.5 bg-gradient-to-br from-[#e8c07c] via-[#d0a45a] to-[#a8853a] text-[#0e1a14] rounded-xl p-[14px] font-sans text-[15px] font-semibold tracking-wide flex items-center justify-center gap-2 cursor-pointer transition-all shadow-[0_10px_30px_-8px_rgba(224,184,116,0.5)] hover:-translate-y-[1px] hover:shadow-[0_14px_36px_-8px_rgba(224,184,116,0.6)] active:translate-y-0"
           >
             Continue
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -265,23 +356,29 @@ export default function Register() {
 
       {step === 2 && (
         <form onSubmit={handleSubmit} noValidate>
+          {/* Role selector */}
           <div className="mb-5">
             <label className="flex items-center text-[12px] font-medium text-[#9ab0a0] tracking-[0.12em] uppercase mb-2">I am a</label>
             <div className="flex max-sm:flex-col gap-3">
               {[
-                { value: "trekker", label: "Trekker", desc: "I want to book guides", icon: "🥾" },
-                { value: "guide", label: "Guide", desc: "I offer trek services", icon: "🧗" },
+                { value: "trekker", label: "Trekker", desc: "Book verified guides", icon: "🥾", badge: null },
+                { value: "guide", label: "Guide", desc: "Offer trek services", icon: "🧗", badge: "Verification required" },
               ].map((r) => (
                 <label
                   key={r.value}
-                  className={`flex-1 flex flex-col items-center gap-1 p-[14px] rounded-xl cursor-pointer transition-all ${
+                  className={`flex-1 flex flex-col items-center gap-1 p-[14px] rounded-xl cursor-pointer transition-all relative ${
                     form.role === r.value
                       ? "bg-[#e0b874]/10 border border-[#e0b874]/40 ring-1 ring-[#e0b874]/25"
                       : "bg-white/[0.04] border border-white/[0.08] hover:bg-white/[0.07]"
                   }`}
                 >
                   <input type="radio" name="role" value={r.value} checked={form.role === r.value} onChange={handleChange} className="hidden" />
-                  <span className="text-2xl leading-none">{r.icon}</span>
+                  {r.badge && (
+                    <span className="absolute -top-2 left-1/2 -translate-x-1/2 text-[10px] bg-[#4a7a8a] text-[#c8e8f0] px-2 py-[2px] rounded-full font-medium tracking-wide whitespace-nowrap">
+                      {r.badge}
+                    </span>
+                  )}
+                  <span className="text-2xl leading-none mt-1">{r.icon}</span>
                   <span className={`text-[14px] font-medium ${form.role === r.value ? "text-[#e0b874]" : "text-[#d0c0a0]"}`}>{r.label}</span>
                   <span className="text-xs text-[#5a7060] text-center">{r.desc}</span>
                 </label>
@@ -289,9 +386,82 @@ export default function Register() {
             </div>
           </div>
 
-          <div className="mb-5">
+          {/* Guide-specific fields */}
+          {form.role === "guide" && (
+            <div className="mb-2 p-4 rounded-xl bg-[#4a7a8a]/10 border border-[#4a7a8a]/25 space-y-4">
+              <p className="text-[12.5px] text-[#8ac8d8] leading-relaxed">
+                Guide accounts require manual review. Submit your Nepal Tourism Board credentials — our team verifies within 2–3 business days.
+              </p>
+
+              <div>
+                <label htmlFor="licenseNumber" className="flex items-center text-[12px] font-medium text-[#9ab0a0] tracking-[0.12em] uppercase mb-2">
+                  NTB License number <span className="text-[#e05040] ml-1">*</span>
+                </label>
+                <div className="relative flex items-center">
+                  <svg className="absolute left-3.5 text-[#5a7060] pointer-events-none" width="18" height="18" viewBox="0 0 18 18" fill="none">
+                    <rect x="2" y="3" width="14" height="12" rx="2" stroke="currentColor" strokeWidth="1.4" />
+                    <path d="M5 7h8M5 10h5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+                  </svg>
+                  <input
+                    id="licenseNumber"
+                    type="text"
+                    name="licenseNumber"
+                    value={form.licenseNumber}
+                    onChange={handleChange}
+                    placeholder="e.g. NTB-G-2024-XXXXX"
+                    className="w-full bg-white/[0.04] border border-white/10 rounded-xl py-[11px] pl-11 pr-4 font-sans text-[14px] font-light text-[#f0e4c8] outline-none transition-all placeholder:text-[#4a6050] focus:border-[#e0b874]/50 focus:bg-white/[0.08] focus:ring-[3px] focus:ring-[#e0b874]/10"
+                  />
+                </div>
+                {errors.licenseNumber && <span className="block text-[12.5px] text-[#f08070] mt-1.5">{errors.licenseNumber}</span>}
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label htmlFor="yearsExperience" className="flex items-center text-[12px] font-medium text-[#9ab0a0] tracking-[0.12em] uppercase mb-2">
+                    Experience <span className="text-[#e05040] ml-1">*</span>
+                  </label>
+                  <select
+                    id="yearsExperience"
+                    name="yearsExperience"
+                    value={form.yearsExperience}
+                    onChange={handleChange}
+                    className="w-full bg-white/[0.04] border border-white/10 rounded-xl py-[11px] px-3 font-sans text-[14px] font-light text-[#f0e4c8] outline-none transition-all focus:border-[#e0b874]/50 focus:bg-white/[0.08] focus:ring-[3px] focus:ring-[#e0b874]/10 appearance-none cursor-pointer"
+                  >
+                    <option value="" className="bg-[#0d1428]">Years</option>
+                    {["1–2", "3–5", "6–10", "10+"].map((y) => (
+                      <option key={y} value={y} className="bg-[#0d1428]">{y} yrs</option>
+                    ))}
+                  </select>
+                  {errors.yearsExperience && <span className="block text-[12.5px] text-[#f08070] mt-1.5">{errors.yearsExperience}</span>}
+                </div>
+
+                <div>
+                  <label htmlFor="specialization" className="flex items-center text-[12px] font-medium text-[#9ab0a0] tracking-[0.12em] uppercase mb-2">
+                    Specialization <span className="text-[#e05040] ml-1">*</span>
+                  </label>
+                  <select
+                    id="specialization"
+                    name="specialization"
+                    value={form.specialization}
+                    onChange={handleChange}
+                    className="w-full bg-white/[0.04] border border-white/10 rounded-xl py-[11px] px-3 font-sans text-[14px] font-light text-[#f0e4c8] outline-none transition-all focus:border-[#e0b874]/50 focus:bg-white/[0.08] focus:ring-[3px] focus:ring-[#e0b874]/10 appearance-none cursor-pointer"
+                  >
+                    <option value="" className="bg-[#0d1428]">Route</option>
+                    {SPECIALIZATIONS.map((s) => (
+                      <option key={s} value={s} className="bg-[#0d1428]">{s}</option>
+                    ))}
+                  </select>
+                  {errors.specialization && <span className="block text-[12.5px] text-[#f08070] mt-1.5">{errors.specialization}</span>}
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="mb-5 mt-4">
             <label htmlFor="phone" className="flex items-center text-[12px] font-medium text-[#9ab0a0] tracking-[0.12em] uppercase mb-2">
-              Phone number <span className="text-[#4a6050] font-light normal-case tracking-normal ml-1">(optional)</span>
+              Phone number
+              {form.role === "trekker" && <span className="text-[#4a6050] font-light normal-case tracking-normal ml-1">(optional)</span>}
+              {form.role === "guide" && <span className="text-[#e05040] ml-1">*</span>}
             </label>
             <div className="relative flex items-center">
               <svg className="absolute left-3.5 text-[#5a7060] pointer-events-none" width="18" height="18" viewBox="0 0 18 18" fill="none">
@@ -312,7 +482,7 @@ export default function Register() {
           </div>
 
           <div className="flex items-start gap-2.5 mb-5 text-[13.5px] text-[#7a9080] leading-relaxed">
-            <input type="checkbox" id="terms" required className="w-4 h-4 mt-[2px] shrink-0 accent-[#e0b874] cursor-pointer bg-white/5 border-white/10" />
+            <input type="checkbox" id="terms" required className="w-4 h-4 mt-[2px] shrink-0 accent-[#e0b874] cursor-pointer" />
             <label htmlFor="terms">
               I agree to the <a href="/terms" className="text-[#e0b874] hover:text-[#f0cc88]">Terms of Service</a> and{" "}
               <a href="/privacy" className="text-[#e0b874] hover:text-[#f0cc88]">Privacy Policy</a>
@@ -334,9 +504,7 @@ export default function Register() {
             >
               {loading ? (
                 <span className="w-[18px] h-[18px] border-2 border-black/20 border-t-[#0e1a14] rounded-full animate-spin" />
-              ) : (
-                "Create account"
-              )}
+              ) : form.role === "guide" ? "Submit for review" : "Create account"}
             </button>
           </div>
         </form>
@@ -347,7 +515,12 @@ export default function Register() {
       </div>
 
       <div className="flex max-sm:flex-col gap-3 mb-6">
-        <button className="flex-1 flex items-center justify-center gap-2 bg-white/[0.04] border border-white/10 rounded-xl p-3 font-sans text-[14px] text-[#b8c0b0] cursor-pointer transition-all hover:bg-white/[0.09] hover:border-white/20 hover:text-[#f0e4c8]">
+        <button
+          type="button"
+          onClick={() => handleGoogleRegister()}
+          disabled={loading}
+          className="flex-1 flex items-center justify-center gap-2 bg-white/[0.04] border border-white/10 rounded-xl p-3 font-sans text-[14px] text-[#b8c0b0] cursor-pointer transition-all hover:bg-white/[0.09] hover:border-white/20 hover:text-[#f0e4c8] disabled:opacity-60 disabled:cursor-not-allowed"
+        >
           <svg width="18" height="18" viewBox="0 0 18 18">
             <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 01-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4" />
             <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z" fill="#34A853" />
@@ -365,5 +538,45 @@ export default function Register() {
         </Link>
       </p>
     </AuthLayout>
+  );
+}
+
+function PendingApproval({ name, email }) {
+  return (
+    <div className="text-center py-4">
+      {/* Shield icon */}
+      <div className="flex items-center justify-center w-16 h-16 mx-auto mb-6 rounded-2xl bg-[#4a7a8a]/15 border border-[#4a7a8a]/30">
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+          <path d="M16 3L6 7v8c0 6.627 4.477 12.822 10 14 5.523-1.178 10-7.373 10-14V7L16 3z" stroke="#8ac8d8" strokeWidth="1.6" strokeLinejoin="round" />
+          <path d="M11 16l3.5 3.5L21 13" stroke="#8ac8d8" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </div>
+
+      <h2 className="font-serif text-[1.7rem] font-bold text-[#f5ead0] mb-2">Application submitted</h2>
+      <p className="text-sm text-[#9ab0a0] mb-6 leading-relaxed">
+        Thank you, <span className="text-[#f0e4c8] font-medium">{name}</span>. Your guide application is under review.<br />
+        We'll send a decision to <span className="text-[#e0b874]">{email}</span> within 2–3 business days.
+      </p>
+
+      <div className="space-y-3 text-left mb-8">
+        {[
+          { icon: "1", text: "License verified against Nepal Tourism Board records" },
+          { icon: "2", text: "Background & safety record check" },
+          { icon: "3", text: "Account activated — you'll receive an email" },
+        ].map((s) => (
+          <div key={s.icon} className="flex items-start gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+            <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[#4a7a8a]/25 text-[#8ac8d8] text-[11px] font-semibold flex items-center justify-center">{s.icon}</span>
+            <span className="text-[13.5px] text-[#9ab8a8] leading-snug">{s.text}</span>
+          </div>
+        ))}
+      </div>
+
+      <Link
+        to="/"
+        className="inline-flex items-center justify-center gap-2 w-full bg-white/[0.06] border border-white/10 text-[#9ab0a0] rounded-xl p-[13px] font-sans text-[14px] font-medium tracking-wide cursor-pointer transition-all hover:bg-white/[0.1] hover:text-[#f0e4c8]"
+      >
+        Back to home
+      </Link>
+    </div>
   );
 }

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useGoogleLogin } from "@react-oauth/google";
 import authService from "../services/api";
 import AuthLayout from "../components/auth/AuthLayout";
 
@@ -14,6 +15,23 @@ export default function Login() {
     setForm({ ...form, [e.target.name]: e.target.value });
     setError("");
   };
+
+  const handleGoogleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      setLoading(true);
+      try {
+        const data = await authService.googleAuth(tokenResponse.access_token);
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("user", JSON.stringify(data.user));
+        navigate("/dashboard");
+      } catch (err) {
+        setError(err.response?.data?.message || "Google sign-in failed.");
+      } finally {
+        setLoading(false);
+      }
+    },
+    onError: () => setError("Google sign-in failed."),
+  });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -65,7 +83,7 @@ export default function Login() {
               name="email"
               value={form.email}
               onChange={handleChange}
-              placeholder="you@example.com"
+              placeholder="Email"
               autoComplete="email"
               required
               className="w-full bg-white/[0.04] border border-white/10 rounded-xl py-[13px] pl-11 pr-4 font-sans text-[15px] font-light text-[#f0e4c8] outline-none transition-all placeholder:text-[#4a6050] focus:border-[#e0b874]/50 focus:bg-white/[0.08] focus:ring-[3px] focus:ring-[#e0b874]/10"
@@ -91,7 +109,7 @@ export default function Login() {
               name="password"
               value={form.password}
               onChange={handleChange}
-              placeholder="••••••••"
+              placeholder="Password"
               autoComplete="current-password"
               required
               className="w-full bg-white/[0.04] border border-white/10 rounded-xl py-[13px] pl-11 pr-11 font-sans text-[15px] font-light text-[#f0e4c8] outline-none transition-all placeholder:text-[#4a6050] focus:border-[#e0b874]/50 focus:bg-white/[0.08] focus:ring-[3px] focus:ring-[#e0b874]/10"
@@ -141,7 +159,12 @@ export default function Login() {
       </div>
 
       <div className="flex max-sm:flex-col gap-3 mb-6">
-        <button className="flex-1 flex items-center justify-center gap-2 bg-white/[0.04] border border-white/10 rounded-xl p-3 font-sans text-[14px] text-[#b8c0b0] cursor-pointer transition-all hover:bg-white/[0.09] hover:border-white/20 hover:text-[#f0e4c8]">
+        <button
+          type="button"
+          onClick={() => handleGoogleLogin()}
+          disabled={loading}
+          className="flex-1 flex items-center justify-center gap-2 bg-white/[0.04] border border-white/10 rounded-xl p-3 font-sans text-[14px] text-[#b8c0b0] cursor-pointer transition-all hover:bg-white/[0.09] hover:border-white/20 hover:text-[#f0e4c8] disabled:opacity-60 disabled:cursor-not-allowed"
+        >
           <svg width="18" height="18" viewBox="0 0 18 18">
             <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 01-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4" />
             <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z" fill="#34A853" />
