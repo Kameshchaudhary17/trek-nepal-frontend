@@ -56,6 +56,11 @@ export default function AdminDashboard() {
   const [guidesLoading, setGuidesLoading] = useState(false);
   const [guideFilter,  setGuideFilter]  = useState("pending");
 
+  // Trekkers state
+  const [trekkers,      setTrekkers]      = useState([]);
+  const [trekkersLoading, setTrekkersLoading] = useState(false);
+  const [trekkerSearch, setTrekkerSearch] = useState("");
+
   // Pricing state
   const [trekPrices,   setTrekPrices]   = useState(TREK_PRICES_INIT);
   const [savedRows,    setSavedRows]    = useState({});
@@ -99,6 +104,28 @@ export default function AdminDashboard() {
   useEffect(() => {
     adminService.listGuides().then((d) => { if (d.counts) setGuideCounts(d.counts); }).catch(() => {});
   }, []);
+
+  // Fetch trekkers when tab active or search changes
+  const fetchTrekkers = useCallback(async (search = "") => {
+    setTrekkersLoading(true);
+    try {
+      const data = await adminService.listTrekkers(search);
+      setTrekkers(data.trekkers || []);
+    } catch {
+      showToast("Failed to load trekkers.", "error");
+    } finally {
+      setTrekkersLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === "users") fetchTrekkers(trekkerSearch);
+  }, [activeTab, fetchTrekkers]);
+
+  function handleTrekkerSearch(q) {
+    setTrekkerSearch(q);
+    fetchTrekkers(q);
+  }
 
   /* ── Helpers ── */
   function showToast(msg, type = "success") {
@@ -168,15 +195,14 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-[#05080f] text-[#f0e4c8] font-sans">
+    <div className="min-h-screen bg-stone-50 font-sans">
       <Navbar />
 
-      {/* Toast notification */}
       {toast && (
-        <div className={`fixed bottom-6 right-6 z-[100] flex items-center gap-2.5 px-4 py-3 rounded-xl text-[13.5px] font-medium shadow-[0_8px_32px_rgba(0,0,0,0.5)] ${
+        <div className={`fixed bottom-6 right-6 z-[100] flex items-center gap-2.5 px-4 py-3 rounded-xl text-[13.5px] font-semibold shadow-lg border ${
           toast.type === "error"
-            ? "bg-[#c8503c]/20 border border-[#c8503c]/40 text-[#f08070]"
-            : "bg-[#4a9a6a]/20 border border-[#4a9a6a]/40 text-[#88cc99]"
+            ? "bg-red-50 border-red-200 text-red-700"
+            : "bg-forest-50 border-forest-200 text-forest-700"
         }`}>
           <span>{toast.type === "error" ? "✕" : "✓"}</span>
           {toast.msg}
@@ -192,23 +218,23 @@ export default function AdminDashboard() {
           setSidebarOpen={setSidebarOpen}
         />
 
-        <main className="flex-1 md:ml-[220px] min-w-0">
+        <main className="flex-1 md:ml-[260px] min-w-0">
           {/* Mobile header */}
-          <div className="md:hidden flex items-center gap-3 px-5 py-3 border-b border-white/[0.07]">
+          <div className="md:hidden flex items-center gap-3 px-5 py-3 border-b border-stone-200 bg-white">
             <button
               onClick={(e) => { e.stopPropagation(); setSidebarOpen(true); }}
-              className="p-2 rounded-lg bg-white/[0.04] border border-white/[0.08] text-[#b0c0b8]"
+              className="p-2 rounded-lg bg-stone-100 border border-stone-200 text-stone-600"
             >
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                 <path d="M2 4h12M2 8h12M2 12h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
               </svg>
             </button>
-            <span className="text-[13px] text-[#7a9080]">
+            <span className="text-[13px] text-stone-600 font-medium">
               {NAV_ITEMS.find((n) => n.id === activeTab)?.label}
             </span>
           </div>
 
-          <div className="px-5 sm:px-8 py-8 max-w-[1100px]">
+          <div className="px-6 sm:px-10 py-8 w-full">
             {activeTab === "overview" && (
               <OverviewSection
                 stats={{ ...MOCK_STATS, pendingVerification: guideCounts.pending }}
@@ -228,7 +254,14 @@ export default function AdminDashboard() {
                 onRestore={restoreGuide}
               />
             )}
-            {activeTab === "users"    && <UsersSection users={MOCK_USERS} />}
+            {activeTab === "users" && (
+              <UsersSection
+                trekkers={trekkers}
+                loading={trekkersLoading}
+                search={trekkerSearch}
+                onSearch={handleTrekkerSearch}
+              />
+            )}
             {activeTab === "pricing"  && (
               <PricingSection
                 trekPrices={trekPrices}

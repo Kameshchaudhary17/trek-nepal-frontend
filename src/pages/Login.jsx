@@ -11,10 +11,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-    setError("");
-  };
+  const handleChange = (e) => { setForm({ ...form, [e.target.name]: e.target.value }); setError(""); };
 
   const handleGoogleLogin = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
@@ -26,9 +23,7 @@ export default function Login() {
         navigate(data.user.role === "guide" ? "/guide/dashboard" : "/dashboard");
       } catch (err) {
         setError(err.response?.data?.message || "Google sign-in failed.");
-      } finally {
-        setLoading(false);
-      }
+      } finally { setLoading(false); }
     },
     onError: () => setError("Google sign-in failed."),
   });
@@ -43,22 +38,20 @@ export default function Login() {
       navigate(data.user.role === "guide" ? "/guide/dashboard" : "/dashboard");
     } catch (err) {
       setError(err.response?.data?.message || "Invalid email or password.");
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
   return (
     <AuthLayout>
       <div className="mb-7">
-        <h1 className="font-serif text-[2rem] max-sm:text-[1.7rem] font-bold text-[#f5ead0] tracking-tight leading-snug mb-1.5">
+        <h1 className="font-serif text-[2rem] max-sm:text-[1.7rem] font-bold text-stone-900 tracking-tight leading-snug mb-1.5">
           Welcome back
         </h1>
-        <p className="text-sm text-[#9ab0a0] font-light">Sign in to continue your Himalayan journey</p>
+        <p className="text-sm text-stone-500 font-light">Sign in to continue your Himalayan journey</p>
       </div>
 
       {error && (
-        <div className="flex items-center gap-2 bg-[#c8503c]/10 border border-[#c8503c]/25 text-[#f08070] rounded-lg p-3 text-[13.5px] mb-5" role="alert">
+        <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-600 rounded-lg p-3 text-[13.5px] mb-5" role="alert">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="shrink-0">
             <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.4" />
             <path d="M8 5v3M8 11v.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
@@ -69,68 +62,44 @@ export default function Login() {
 
       <form onSubmit={handleSubmit} noValidate>
         <div className="mb-5">
-          <label htmlFor="email" className="flex items-center justify-between text-[12px] font-medium text-[#9ab0a0] tracking-[0.12em] uppercase mb-2">
+          <label htmlFor="email" className="block text-[12px] font-semibold text-stone-500 tracking-[0.12em] uppercase mb-2">
             Email address
           </label>
           <div className="relative flex items-center">
-            <svg className="absolute left-3.5 text-[#5a7060] pointer-events-none" width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <svg className="absolute left-3.5 text-stone-400 pointer-events-none" width="18" height="18" viewBox="0 0 18 18" fill="none">
               <rect x="1.5" y="4" width="15" height="10.5" rx="2" stroke="currentColor" strokeWidth="1.4" />
               <path d="M1.5 6.5L9 11L16.5 6.5" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
             </svg>
             <input
-              id="email"
-              type="email"
-              name="email"
-              value={form.email}
-              onChange={handleChange}
-              placeholder="Email"
-              autoComplete="email"
-              required
-              className="w-full bg-white/[0.04] border border-white/10 rounded-xl py-[13px] pl-11 pr-4 font-sans text-[15px] font-light text-[#f0e4c8] outline-none transition-all placeholder:text-[#4a6050] focus:border-[#e0b874]/50 focus:bg-white/[0.08] focus:ring-[3px] focus:ring-[#e0b874]/10"
+              id="email" type="email" name="email" value={form.email} onChange={handleChange}
+              placeholder="Email" autoComplete="email" required
+              className="w-full bg-stone-50 border border-stone-200 rounded-xl py-[13px] pl-11 pr-4 text-[15px] text-stone-800 outline-none transition-all placeholder:text-stone-400 focus:border-forest-400 focus:bg-white focus:ring-2 focus:ring-forest-100"
             />
           </div>
         </div>
 
         <div className="mb-5">
-          <label htmlFor="password" className="flex items-center justify-between text-[12px] font-medium text-[#9ab0a0] tracking-[0.12em] uppercase mb-2">
+          <label htmlFor="password" className="flex items-center justify-between text-[12px] font-semibold text-stone-500 tracking-[0.12em] uppercase mb-2">
             Password
-            <Link to="/forgot-password" className="text-[#e0b874] hover:text-[#f0cc88] text-[12.5px] font-normal normal-case tracking-normal hover:underline">
+            <Link to="/forgot-password" className="text-forest-600 hover:text-forest-700 text-[12.5px] font-normal normal-case tracking-normal hover:underline">
               Forgot password?
             </Link>
           </label>
           <div className="relative flex items-center">
-            <svg className="absolute left-3.5 text-[#5a7060] pointer-events-none" width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <svg className="absolute left-3.5 text-stone-400 pointer-events-none" width="18" height="18" viewBox="0 0 18 18" fill="none">
               <rect x="4" y="8" width="10" height="8" rx="1.5" stroke="currentColor" strokeWidth="1.4" />
               <path d="M6 8V6a3 3 0 016 0v2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
             </svg>
             <input
-              id="password"
-              type={showPass ? "text" : "password"}
-              name="password"
-              value={form.password}
-              onChange={handleChange}
-              placeholder="Password"
-              autoComplete="current-password"
-              required
-              className="w-full bg-white/[0.04] border border-white/10 rounded-xl py-[13px] pl-11 pr-11 font-sans text-[15px] font-light text-[#f0e4c8] outline-none transition-all placeholder:text-[#4a6050] focus:border-[#e0b874]/50 focus:bg-white/[0.08] focus:ring-[3px] focus:ring-[#e0b874]/10"
+              id="password" type={showPass ? "text" : "password"} name="password" value={form.password} onChange={handleChange}
+              placeholder="Password" autoComplete="current-password" required
+              className="w-full bg-stone-50 border border-stone-200 rounded-xl py-[13px] pl-11 pr-11 text-[15px] text-stone-800 outline-none transition-all placeholder:text-stone-400 focus:border-forest-400 focus:bg-white focus:ring-2 focus:ring-forest-100"
             />
-            <button
-              type="button"
-              className="absolute right-3 text-[#5a7060] hover:text-[#e0b874] transition-colors bg-transparent border-none flex items-center cursor-pointer p-1"
-              onClick={() => setShowPass(!showPass)}
-              aria-label="Toggle password"
-            >
+            <button type="button" className="absolute right-3 text-stone-400 hover:text-forest-600 transition-colors bg-transparent border-none flex items-center cursor-pointer p-1" onClick={() => setShowPass(!showPass)} aria-label="Toggle password">
               {showPass ? (
-                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                  <path d="M2 9s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z" stroke="currentColor" strokeWidth="1.4" />
-                  <circle cx="9" cy="9" r="2" stroke="currentColor" strokeWidth="1.4" />
-                  <path d="M3 3l12 12" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-                </svg>
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M2 9s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z" stroke="currentColor" strokeWidth="1.4" /><circle cx="9" cy="9" r="2" stroke="currentColor" strokeWidth="1.4" /><path d="M3 3l12 12" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" /></svg>
               ) : (
-                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                  <path d="M2 9s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z" stroke="currentColor" strokeWidth="1.4" />
-                  <circle cx="9" cy="9" r="2" stroke="currentColor" strokeWidth="1.4" />
-                </svg>
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M2 9s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z" stroke="currentColor" strokeWidth="1.4" /><circle cx="9" cy="9" r="2" stroke="currentColor" strokeWidth="1.4" /></svg>
               )}
             </button>
           </div>
@@ -138,11 +107,11 @@ export default function Login() {
 
         <button
           type="submit"
-          className="w-full mt-2 bg-gradient-to-br from-[#e8c07c] via-[#d0a45a] to-[#a8853a] text-[#0e1a14] rounded-xl p-[14px] font-sans text-[15px] font-semibold tracking-wide flex items-center justify-center gap-2 cursor-pointer transition-all shadow-[0_10px_30px_-8px_rgba(224,184,116,0.5)] hover:-translate-y-[1px] hover:shadow-[0_14px_36px_-8px_rgba(224,184,116,0.6)] active:translate-y-0 disabled:opacity-70 disabled:cursor-not-allowed"
+          className="w-full mt-2 bg-forest-500 text-white rounded-xl p-[14px] text-[15px] font-semibold tracking-wide flex items-center justify-center gap-2 cursor-pointer transition-all hover:bg-forest-600 hover:-translate-y-[1px] hover:shadow-lg active:translate-y-0 disabled:opacity-70 disabled:cursor-not-allowed"
           disabled={loading}
         >
           {loading ? (
-            <span className="w-[18px] h-[18px] border-2 border-black/20 border-t-[#0e1a14] rounded-full animate-spin" />
+            <span className="w-[18px] h-[18px] border-2 border-white/30 border-t-white rounded-full animate-spin" />
           ) : (
             <>
               Sign in
@@ -154,7 +123,7 @@ export default function Login() {
         </button>
       </form>
 
-      <div className="flex items-center gap-3 my-6 text-[12px] text-[#4a6050] tracking-wide before:content-[''] before:flex-1 before:h-px before:bg-white/10 after:content-[''] after:flex-1 after:h-px after:bg-white/10">
+      <div className="flex items-center gap-3 my-6 text-[12px] text-stone-400 tracking-wide before:content-[''] before:flex-1 before:h-px before:bg-stone-200 after:content-[''] after:flex-1 after:h-px after:bg-stone-200">
         <span>OR CONTINUE WITH</span>
       </div>
 
@@ -163,7 +132,7 @@ export default function Login() {
           type="button"
           onClick={() => handleGoogleLogin()}
           disabled={loading}
-          className="flex-1 flex items-center justify-center gap-2 bg-white/[0.04] border border-white/10 rounded-xl p-3 font-sans text-[14px] text-[#b8c0b0] cursor-pointer transition-all hover:bg-white/[0.09] hover:border-white/20 hover:text-[#f0e4c8] disabled:opacity-60 disabled:cursor-not-allowed"
+          className="flex-1 flex items-center justify-center gap-2 bg-white border border-stone-200 rounded-xl p-3 text-[14px] text-stone-600 cursor-pointer transition-all hover:bg-stone-50 hover:border-stone-300 hover:text-stone-900 disabled:opacity-60 disabled:cursor-not-allowed"
         >
           <svg width="18" height="18" viewBox="0 0 18 18">
             <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 01-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4" />
@@ -175,9 +144,9 @@ export default function Login() {
         </button>
       </div>
 
-      <p className="text-center text-[14px] text-[#7a9080]">
+      <p className="text-center text-[14px] text-stone-500">
         Don't have an account?{" "}
-        <Link to="/register" className="text-[#e0b874] font-medium hover:text-[#f0cc88] hover:underline">
+        <Link to="/register" className="text-forest-600 font-medium hover:text-forest-700 hover:underline">
           Create one
         </Link>
       </p>

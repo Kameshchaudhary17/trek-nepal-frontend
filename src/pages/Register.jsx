@@ -5,55 +5,27 @@ import authService from "../services/api";
 import AuthLayout from "../components/auth/AuthLayout";
 
 const SPECIALIZATIONS = [
-    "Swayambhunath (Monkey Temple)",
-  "Boudhanath Stupa",
-  "Pashupatinath Temple",
-  "Durbar Square (Kathmandu)",
-  "Changunarayan Temple",
-  "Phewa Lake",
-  "Sarangkot",
-  "World Peace Pagoda",
-  "Davis Falls",
-  "Gupteshwor Cave",
-  "Begnas Lake",
-  "Mahendra Cave",
-  "Lukla",
-  "Namche Bazaar",
-  "Tengboche Monastery",
-  "Kala Patthar",
-  "Gokyo Lakes",
-  "Annapurna Circuit",
-  "Ghorepani Poon Hill",
-  "Mardi Himal",
-  "Jomsom",
-  "Tatopani",
-  "Manang",
-  "Thorong La Pass",
-  "Kyanjin Gompa",
-  "Helambu Valley",
-  "Chitwan National Park",
-  "Bardia National Park",
-  "Tharu Cultural Village",
-  "Elephant Breeding Center",
-  "Rara Lake",
-  "Rara National Park",
-  "Khaptad National Park",
-  "Dhorpatan Hunting Reserve",
-  "Api Himal Base Camp",
-  "Saipal Himal Region",
-  "Badimalika Temple",
-  "Muktinath Temple",
-  "Janaki Temple (Janakpur)",
-  "Pathivara Temple",
-  "Manakamana Temple",
-  "Upper Mustang",
-  "Lower Mustang",
-  "Dolpo Region",
-  "Tilicho Lake",
-  "Kanchenjunga Base Camp"
+  "Swayambhunath (Monkey Temple)", "Boudhanath Stupa", "Pashupatinath Temple",
+  "Durbar Square (Kathmandu)", "Changunarayan Temple", "Phewa Lake", "Sarangkot",
+  "World Peace Pagoda", "Davis Falls", "Gupteshwor Cave", "Begnas Lake",
+  "Mahendra Cave", "Lukla", "Namche Bazaar", "Tengboche Monastery", "Kala Patthar",
+  "Gokyo Lakes", "Annapurna Circuit", "Ghorepani Poon Hill", "Mardi Himal",
+  "Jomsom", "Tatopani", "Manang", "Thorong La Pass", "Kyanjin Gompa",
+  "Helambu Valley", "Chitwan National Park", "Bardia National Park",
+  "Tharu Cultural Village", "Elephant Breeding Center", "Rara Lake",
+  "Rara National Park", "Khaptad National Park", "Dhorpatan Hunting Reserve",
+  "Api Himal Base Camp", "Saipal Himal Region", "Badimalika Temple",
+  "Muktinath Temple", "Janaki Temple (Janakpur)", "Pathivara Temple",
+  "Manakamana Temple", "Upper Mustang", "Lower Mustang", "Dolpo Region",
+  "Tilicho Lake", "Kanchenjunga Base Camp",
 ];
 
-/* ─── OTP 6-box input ────────────────────────────────────────────── */
+const INPUT_CLS = "w-full bg-stone-50 border border-stone-200 rounded-xl py-[13px] pl-11 pr-4 text-[15px] text-stone-800 outline-none transition-all placeholder:text-stone-400 focus:border-forest-400 focus:bg-white focus:ring-2 focus:ring-forest-100";
+const INPUT_SM  = "w-full bg-stone-50 border border-stone-200 rounded-xl py-[11px] pl-11 pr-4 text-[14px] text-stone-800 outline-none transition-all placeholder:text-stone-400 focus:border-forest-400 focus:bg-white focus:ring-2 focus:ring-forest-100";
+const SELECT_CLS = "w-full bg-stone-50 border border-stone-200 rounded-xl py-[11px] px-3 text-[14px] text-stone-800 outline-none transition-all focus:border-forest-400 focus:bg-white focus:ring-2 focus:ring-forest-100 appearance-none cursor-pointer";
+const LABEL_CLS = "flex items-center text-[12px] font-semibold text-stone-500 tracking-[0.12em] uppercase mb-2";
+const ERR_CLS = "block text-[12.5px] text-red-500 mt-1.5";
+
 function OtpInput({ value, onChange }) {
   const inputs = useRef([]);
   const digits = value.padEnd(6, " ").split("").slice(0, 6);
@@ -68,19 +40,14 @@ function OtpInput({ value, onChange }) {
   }
 
   function handleKeyDown(i, e) {
-    if (e.key === "Backspace") {
-      if (!digits[i]?.trim() && i > 0) {
-        inputs.current[i - 1]?.focus();
-      }
+    if (e.key === "Backspace" && !digits[i]?.trim() && i > 0) {
+      inputs.current[i - 1]?.focus();
     }
   }
 
   function handlePaste(e) {
     const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
-    if (pasted) {
-      onChange(pasted);
-      inputs.current[Math.min(pasted.length, 5)]?.focus();
-    }
+    if (pasted) { onChange(pasted); inputs.current[Math.min(pasted.length, 5)]?.focus(); }
     e.preventDefault();
   }
 
@@ -97,18 +64,15 @@ function OtpInput({ value, onChange }) {
           onChange={(e) => handleChange(i, e)}
           onKeyDown={(e) => handleKeyDown(i, e)}
           onPaste={handlePaste}
-          className="w-11 h-14 text-center text-[1.3rem] font-semibold text-[#f0e4c8] bg-white/[0.04] border border-white/10 rounded-xl outline-none transition-all focus:border-[#e0b874]/60 focus:bg-white/[0.08] focus:ring-[3px] focus:ring-[#e0b874]/10 caret-transparent"
+          className="w-11 h-14 text-center text-[1.3rem] font-semibold text-stone-800 bg-stone-50 border border-stone-200 rounded-xl outline-none transition-all focus:border-forest-400 focus:bg-white focus:ring-2 focus:ring-forest-100 caret-transparent"
         />
       ))}
     </div>
   );
 }
 
-/* ─── Register page ──────────────────────────────────────────────── */
 export default function Register() {
   const navigate = useNavigate();
-
-  // step 1 = Account, 2 = Profile, 3 = Verify OTP
   const [step, setStep] = useState(1);
   const [submitted, setSubmitted] = useState(false);
 
@@ -121,7 +85,6 @@ export default function Register() {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
 
-  // OTP step state
   const [otp, setOtp] = useState("");
   const [registeredEmail, setRegisteredEmail] = useState("");
   const [registeredRole, setRegisteredRole] = useState("trekker");
@@ -159,10 +122,7 @@ export default function Register() {
     return Object.keys(e).length === 0;
   };
 
-  const handleNext = (e) => {
-    e.preventDefault();
-    if (validateStep1()) setStep(2);
-  };
+  const handleNext = (e) => { e.preventDefault(); if (validateStep1()) setStep(2); };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -178,33 +138,25 @@ export default function Register() {
       setStep(3);
     } catch (err) {
       setErrors({ server: err.response?.data?.message || "Registration failed. Try again." });
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
   const handleVerifyOtp = async (e) => {
     e.preventDefault();
-    if (otp.replace(/\s/g, "").length < 6) {
-      setErrors({ otp: "Enter the full 6-digit code" });
-      return;
-    }
+    if (otp.replace(/\s/g, "").length < 6) { setErrors({ otp: "Enter the full 6-digit code" }); return; }
     setLoading(true);
     setErrors({});
     try {
       const data = await authService.verifyOtp(registeredEmail, otp.replace(/\s/g, ""));
-      if (registeredRole === "guide") {
-        setSubmitted(true);
-      } else {
+      if (registeredRole === "guide") { setSubmitted(true); }
+      else {
         localStorage.setItem("token", data.token);
         localStorage.setItem("user", JSON.stringify(data.user));
         navigate("/dashboard");
       }
     } catch (err) {
       setErrors({ otp: err.response?.data?.message || "Verification failed. Try again." });
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
   const handleResendOtp = async () => {
@@ -218,9 +170,7 @@ export default function Register() {
       setOtp("");
     } catch (err) {
       setErrors({ otp: err.response?.data?.message || "Failed to resend OTP." });
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
   const handleGoogleRegister = useGoogleLogin({
@@ -233,9 +183,7 @@ export default function Register() {
         navigate("/dashboard");
       } catch (err) {
         setErrors({ server: err.response?.data?.message || "Google sign-up failed." });
-      } finally {
-        setLoading(false);
-      }
+      } finally { setLoading(false); }
     },
     onError: () => setErrors({ server: "Google sign-up failed." }),
   });
@@ -251,31 +199,31 @@ export default function Register() {
     return s;
   })();
   const strengthLabel = ["", "Weak", "Fair", "Good", "Strong"][strength];
-  const strengthColor = ["", "#e05040", "#d4913a", "#7aab50", "#4caf70"][strength];
+  const strengthColor = ["", "#e05040", "#d4913a", "#2D6A4F", "#1E4D38"][strength];
 
   const maskedEmail = registeredEmail.replace(/^(.{2})(.*)(@.*)$/, (_, a, b, c) => a + "*".repeat(b.length) + c);
 
   const side = (
-    <div className="max-w-md animate-auth-float">
-      <span className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-[#e0b874] font-medium mb-5">
-        <span className="w-8 h-px bg-[#e0b874]" />
+    <div className="max-w-md">
+      <span className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-forest-600 font-semibold mb-5">
+        <span className="w-8 h-px bg-forest-500" />
         Join TrekDirect Nepal
       </span>
-      <h2 className="font-serif text-[2.6rem] leading-[1.1] font-bold text-[#f5ead0] mb-5">
+      <h2 className="font-serif text-[2.6rem] leading-[1.1] font-bold text-stone-900 mb-5">
         Your trail begins<br />
-        <span className="italic text-[#e0b874]">at hello.</span>
+        <span className="italic text-forest-600">at hello.</span>
       </h2>
-      <p className="text-[15px] leading-relaxed text-[#c8d0c0]/85 font-light mb-8">
+      <p className="text-[15px] leading-relaxed text-stone-600 mb-8">
         Create an account to save routes, message verified guides, and carry your itinerary across every peak you plan to climb.
       </p>
-      <ul className="space-y-3 text-[14px] text-[#c8d0c0]/90">
+      <ul className="space-y-3 text-[14px] text-stone-600">
         {[
           "Only Nepal Tourism Board licensed guides",
           "Built-in permit & insurance checklists",
           "Offline itinerary, even above base camp",
         ].map((t) => (
           <li key={t} className="flex items-start gap-3">
-            <span className="mt-[6px] w-1.5 h-1.5 rounded-full bg-[#e0b874] shadow-[0_0_10px_#e0b874] shrink-0" />
+            <span className="mt-[6px] w-1.5 h-1.5 rounded-full bg-forest-500 shrink-0" />
             {t}
           </li>
         ))}
@@ -284,11 +232,7 @@ export default function Register() {
   );
 
   if (submitted) {
-    return (
-      <AuthLayout side={side}>
-        <PendingApproval name={form.fullName} email={registeredEmail} />
-      </AuthLayout>
-    );
+    return <AuthLayout side={side}><PendingApproval name={form.fullName} email={registeredEmail} /></AuthLayout>;
   }
 
   const STEPS = [
@@ -303,26 +247,26 @@ export default function Register() {
       <div className="flex items-center gap-0 mb-7">
         {STEPS.map((s, i) => (
           <div key={s.n} className="flex items-center flex-1 last:flex-none">
-            <div className={`flex items-center gap-2 text-[13px] font-normal transition-colors ${step >= s.n ? "text-[#e0b874]" : "text-[#4a6050]"}`}>
-              <div className={`w-[28px] h-[28px] rounded-full flex items-center justify-center text-[12.5px] font-medium transition-all border ${step >= s.n ? "bg-[#e0b874]/15 border-[#e0b874]/45 text-[#e0b874]" : "bg-white/5 border-white/10 text-[#5a7060]"}`}>
+            <div className={`flex items-center gap-2 text-[13px] font-normal transition-colors ${step >= s.n ? "text-forest-600" : "text-stone-400"}`}>
+              <div className={`w-[28px] h-[28px] rounded-full flex items-center justify-center text-[12.5px] font-semibold transition-all border ${step >= s.n ? "bg-forest-100 border-forest-400 text-forest-700" : "bg-stone-100 border-stone-200 text-stone-400"}`}>
                 {step > s.n ? (
                   <svg width="12" height="12" viewBox="0 0 12 12">
                     <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
                   </svg>
                 ) : s.n}
               </div>
-              <span>{s.label}</span>
+              <span className={step >= s.n ? "text-stone-700 font-medium" : "text-stone-400"}>{s.label}</span>
             </div>
-            {i < STEPS.length - 1 && <div className="flex-1 h-px bg-white/10 mx-3" />}
+            {i < STEPS.length - 1 && <div className="flex-1 h-px bg-stone-200 mx-3" />}
           </div>
         ))}
       </div>
 
       <div className="mb-7">
-        <h1 className="font-serif text-[2rem] max-sm:text-[1.7rem] font-bold text-[#f5ead0] tracking-tight leading-snug mb-1.5">
+        <h1 className="font-serif text-[2rem] max-sm:text-[1.7rem] font-bold text-stone-900 tracking-tight leading-snug mb-1.5">
           {step === 1 ? "Create account" : step === 2 ? "Almost there" : "Check your email"}
         </h1>
-        <p className="text-sm text-[#9ab0a0] font-light">
+        <p className="text-sm text-stone-500 font-light">
           {step === 1 && "Start your Himalayan adventure today"}
           {step === 2 && "A few more details to personalise your experience"}
           {step === 3 && `We sent a 6-digit code to ${maskedEmail}`}
@@ -330,7 +274,7 @@ export default function Register() {
       </div>
 
       {errors.server && (
-        <div className="flex items-center gap-2 bg-[#c8503c]/10 border border-[#c8503c]/25 text-[#f08070] rounded-lg p-3 text-[13.5px] mb-5" role="alert">
+        <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-600 rounded-lg p-3 text-[13.5px] mb-5" role="alert">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="shrink-0">
             <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.4" />
             <path d="M8 5v3M8 11v.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
@@ -343,52 +287,43 @@ export default function Register() {
       {step === 1 && (
         <form onSubmit={handleNext} noValidate>
           <div className="mb-5">
-            <label htmlFor="fullName" className="flex items-center justify-between text-[12px] font-medium text-[#9ab0a0] tracking-[0.12em] uppercase mb-2">Full name</label>
+            <label htmlFor="fullName" className={LABEL_CLS}>Full name</label>
             <div className="relative flex items-center">
-              <svg className="absolute left-3.5 text-[#5a7060] pointer-events-none" width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <svg className="absolute left-3.5 text-stone-400 pointer-events-none" width="18" height="18" viewBox="0 0 18 18" fill="none">
                 <circle cx="9" cy="6" r="3" stroke="currentColor" strokeWidth="1.4" />
                 <path d="M2 15c0-3.314 3.134-6 7-6s7 2.686 7 6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
               </svg>
-              <input id="fullName" type="text" name="fullName" value={form.fullName} onChange={handleChange} placeholder="Full Name" autoComplete="name"
-                className="w-full bg-white/[0.04] border border-white/10 rounded-xl py-[13px] pl-11 pr-4 font-sans text-[15px] font-light text-[#f0e4c8] outline-none transition-all placeholder:text-[#4a6050] focus:border-[#e0b874]/50 focus:bg-white/[0.08] focus:ring-[3px] focus:ring-[#e0b874]/10" />
+              <input id="fullName" type="text" name="fullName" value={form.fullName} onChange={handleChange} placeholder="Full Name" autoComplete="name" className={INPUT_CLS} />
             </div>
-            {errors.fullName && <span className="block text-[12.5px] text-[#f08070] mt-1.5">{errors.fullName}</span>}
+            {errors.fullName && <span className={ERR_CLS}>{errors.fullName}</span>}
           </div>
 
           <div className="mb-5">
-            <label htmlFor="email" className="flex items-center justify-between text-[12px] font-medium text-[#9ab0a0] tracking-[0.12em] uppercase mb-2">Email address</label>
+            <label htmlFor="email" className={LABEL_CLS}>Email address</label>
             <div className="relative flex items-center">
-              <svg className="absolute left-3.5 text-[#5a7060] pointer-events-none" width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <svg className="absolute left-3.5 text-stone-400 pointer-events-none" width="18" height="18" viewBox="0 0 18 18" fill="none">
                 <rect x="1.5" y="4" width="15" height="10.5" rx="2" stroke="currentColor" strokeWidth="1.4" />
                 <path d="M1.5 6.5L9 11L16.5 6.5" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
               </svg>
-              <input id="email" type="email" name="email" value={form.email} onChange={handleChange} placeholder="you@example.com" autoComplete="email"
-                className="w-full bg-white/[0.04] border border-white/10 rounded-xl py-[13px] pl-11 pr-4 font-sans text-[15px] font-light text-[#f0e4c8] outline-none transition-all placeholder:text-[#4a6050] focus:border-[#e0b874]/50 focus:bg-white/[0.08] focus:ring-[3px] focus:ring-[#e0b874]/10" />
+              <input id="email" type="email" name="email" value={form.email} onChange={handleChange} placeholder="you@example.com" autoComplete="email" className={INPUT_CLS} />
             </div>
-            {errors.email && <span className="block text-[12.5px] text-[#f08070] mt-1.5">{errors.email}</span>}
+            {errors.email && <span className={ERR_CLS}>{errors.email}</span>}
           </div>
 
           <div className="mb-5">
-            <label htmlFor="password" className="flex items-center justify-between text-[12px] font-medium text-[#9ab0a0] tracking-[0.12em] uppercase mb-2">Password</label>
+            <label htmlFor="password" className={LABEL_CLS}>Password</label>
             <div className="relative flex items-center">
-              <svg className="absolute left-3.5 text-[#5a7060] pointer-events-none" width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <svg className="absolute left-3.5 text-stone-400 pointer-events-none" width="18" height="18" viewBox="0 0 18 18" fill="none">
                 <rect x="4" y="8" width="10" height="8" rx="1.5" stroke="currentColor" strokeWidth="1.4" />
                 <path d="M6 8V6a3 3 0 016 0v2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
               </svg>
               <input id="password" type={showPass ? "text" : "password"} name="password" value={form.password} onChange={handleChange} placeholder="Min. 8 characters" autoComplete="new-password"
-                className="w-full bg-white/[0.04] border border-white/10 rounded-xl py-[13px] pl-11 pr-11 font-sans text-[15px] font-light text-[#f0e4c8] outline-none transition-all placeholder:text-[#4a6050] focus:border-[#e0b874]/50 focus:bg-white/[0.08] focus:ring-[3px] focus:ring-[#e0b874]/10" />
-              <button type="button" className="absolute right-3.5 text-[#5a7060] hover:text-[#e0b874] transition-colors bg-transparent border-none flex items-center cursor-pointer p-1" onClick={() => setShowPass(!showPass)} aria-label="Toggle password">
+                className="w-full bg-stone-50 border border-stone-200 rounded-xl py-[13px] pl-11 pr-11 text-[15px] text-stone-800 outline-none transition-all placeholder:text-stone-400 focus:border-forest-400 focus:bg-white focus:ring-2 focus:ring-forest-100" />
+              <button type="button" className="absolute right-3.5 text-stone-400 hover:text-forest-600 transition-colors bg-transparent border-none flex items-center cursor-pointer p-1" onClick={() => setShowPass(!showPass)} aria-label="Toggle password">
                 {showPass ? (
-                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                    <path d="M2 9s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z" stroke="currentColor" strokeWidth="1.4" />
-                    <circle cx="9" cy="9" r="2" stroke="currentColor" strokeWidth="1.4" />
-                    <path d="M3 3l12 12" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-                  </svg>
+                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M2 9s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z" stroke="currentColor" strokeWidth="1.4" /><circle cx="9" cy="9" r="2" stroke="currentColor" strokeWidth="1.4" /><path d="M3 3l12 12" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" /></svg>
                 ) : (
-                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                    <path d="M2 9s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z" stroke="currentColor" strokeWidth="1.4" />
-                    <circle cx="9" cy="9" r="2" stroke="currentColor" strokeWidth="1.4" />
-                  </svg>
+                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M2 9s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z" stroke="currentColor" strokeWidth="1.4" /><circle cx="9" cy="9" r="2" stroke="currentColor" strokeWidth="1.4" /></svg>
                 )}
               </button>
             </div>
@@ -396,29 +331,28 @@ export default function Register() {
               <div className="flex items-center gap-2.5 mt-2">
                 <div className="flex gap-1">
                   {[1, 2, 3, 4].map((i) => (
-                    <div key={i} className="w-7 h-[3px] rounded-sm transition-colors" style={{ background: i <= strength ? strengthColor : "rgba(255,255,255,.08)" }} />
+                    <div key={i} className="w-7 h-[3px] rounded-sm transition-colors" style={{ background: i <= strength ? strengthColor : "#E7E5E4" }} />
                   ))}
                 </div>
                 <span className="text-xs font-medium" style={{ color: strengthColor }}>{strengthLabel}</span>
               </div>
             )}
-            {errors.password && <span className="block text-[12.5px] text-[#f08070] mt-1.5">{errors.password}</span>}
+            {errors.password && <span className={ERR_CLS}>{errors.password}</span>}
           </div>
 
           <div className="mb-5">
-            <label htmlFor="confirmPassword" className="flex items-center justify-between text-[12px] font-medium text-[#9ab0a0] tracking-[0.12em] uppercase mb-2">Confirm password</label>
+            <label htmlFor="confirmPassword" className={LABEL_CLS}>Confirm password</label>
             <div className="relative flex items-center">
-              <svg className="absolute left-3.5 text-[#5a7060] pointer-events-none" width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <svg className="absolute left-3.5 text-stone-400 pointer-events-none" width="18" height="18" viewBox="0 0 18 18" fill="none">
                 <rect x="4" y="8" width="10" height="8" rx="1.5" stroke="currentColor" strokeWidth="1.4" />
                 <path d="M6 8V6a3 3 0 016 0v2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
               </svg>
-              <input id="confirmPassword" type="password" name="confirmPassword" value={form.confirmPassword} onChange={handleChange} placeholder="Repeat password" autoComplete="new-password"
-                className="w-full bg-white/[0.04] border border-white/10 rounded-xl py-[13px] pl-11 pr-4 font-sans text-[15px] font-light text-[#f0e4c8] outline-none transition-all placeholder:text-[#4a6050] focus:border-[#e0b874]/50 focus:bg-white/[0.08] focus:ring-[3px] focus:ring-[#e0b874]/10" />
+              <input id="confirmPassword" type="password" name="confirmPassword" value={form.confirmPassword} onChange={handleChange} placeholder="Repeat password" autoComplete="new-password" className={INPUT_CLS} />
             </div>
-            {errors.confirmPassword && <span className="block text-[12.5px] text-[#f08070] mt-1.5">{errors.confirmPassword}</span>}
+            {errors.confirmPassword && <span className={ERR_CLS}>{errors.confirmPassword}</span>}
           </div>
 
-          <button type="submit" className="w-full mt-1.5 bg-gradient-to-br from-[#e8c07c] via-[#d0a45a] to-[#a8853a] text-[#0e1a14] rounded-xl p-[14px] font-sans text-[15px] font-semibold tracking-wide flex items-center justify-center gap-2 cursor-pointer transition-all shadow-[0_10px_30px_-8px_rgba(224,184,116,0.5)] hover:-translate-y-[1px] hover:shadow-[0_14px_36px_-8px_rgba(224,184,116,0.6)] active:translate-y-0">
+          <button type="submit" className="w-full mt-1.5 bg-forest-500 text-white rounded-xl p-[14px] text-[15px] font-semibold tracking-wide flex items-center justify-center gap-2 cursor-pointer transition-all hover:bg-forest-600 hover:-translate-y-[1px] hover:shadow-lg active:translate-y-0">
             Continue
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
               <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
@@ -431,96 +365,92 @@ export default function Register() {
       {step === 2 && (
         <form onSubmit={handleSubmit} noValidate>
           <div className="mb-5">
-            <label className="flex items-center text-[12px] font-medium text-[#9ab0a0] tracking-[0.12em] uppercase mb-2">I am a</label>
+            <label className={LABEL_CLS}>I am a</label>
             <div className="flex max-sm:flex-col gap-3">
               {[
                 { value: "trekker", label: "Trekker", desc: "Book verified guides", icon: "🥾", badge: null },
                 { value: "guide", label: "Guide", desc: "Offer trek services", icon: "🧗", badge: "Verification required" },
               ].map((r) => (
-                <label key={r.value} className={`flex-1 flex flex-col items-center gap-1 p-[14px] rounded-xl cursor-pointer transition-all relative ${form.role === r.value ? "bg-[#e0b874]/10 border border-[#e0b874]/40 ring-1 ring-[#e0b874]/25" : "bg-white/[0.04] border border-white/[0.08] hover:bg-white/[0.07]"}`}>
+                <label key={r.value} className={`flex-1 flex flex-col items-center gap-1 p-[14px] rounded-xl cursor-pointer transition-all relative ${form.role === r.value ? "bg-forest-50 border border-forest-300 ring-1 ring-forest-200" : "bg-stone-50 border border-stone-200 hover:bg-stone-100"}`}>
                   <input type="radio" name="role" value={r.value} checked={form.role === r.value} onChange={handleChange} className="hidden" />
                   {r.badge && (
-                    <span className="absolute -top-2 left-1/2 -translate-x-1/2 text-[10px] bg-[#4a7a8a] text-[#c8e8f0] px-2 py-[2px] rounded-full font-medium tracking-wide whitespace-nowrap">{r.badge}</span>
+                    <span className="absolute -top-2 left-1/2 -translate-x-1/2 text-[10px] bg-blue-100 text-blue-700 border border-blue-200 px-2 py-[2px] rounded-full font-medium tracking-wide whitespace-nowrap">{r.badge}</span>
                   )}
                   <span className="text-2xl leading-none mt-1">{r.icon}</span>
-                  <span className={`text-[14px] font-medium ${form.role === r.value ? "text-[#e0b874]" : "text-[#d0c0a0]"}`}>{r.label}</span>
-                  <span className="text-xs text-[#5a7060] text-center">{r.desc}</span>
+                  <span className={`text-[14px] font-medium ${form.role === r.value ? "text-forest-700" : "text-stone-700"}`}>{r.label}</span>
+                  <span className="text-xs text-stone-500 text-center">{r.desc}</span>
                 </label>
               ))}
             </div>
           </div>
 
           {form.role === "guide" && (
-            <div className="mb-2 p-4 rounded-xl bg-[#4a7a8a]/10 border border-[#4a7a8a]/25 space-y-4">
-              <p className="text-[12.5px] text-[#8ac8d8] leading-relaxed">
+            <div className="mb-2 p-4 rounded-xl bg-blue-50 border border-blue-200 space-y-4">
+              <p className="text-[12.5px] text-blue-700 leading-relaxed">
                 Guide accounts require manual review. Submit your Nepal Tourism Board credentials — our team verifies within 2–3 business days.
               </p>
               <div>
-                <label htmlFor="licenseNumber" className="flex items-center text-[12px] font-medium text-[#9ab0a0] tracking-[0.12em] uppercase mb-2">NTB License number <span className="text-[#e05040] ml-1">*</span></label>
+                <label htmlFor="licenseNumber" className="flex items-center text-[12px] font-semibold text-stone-500 tracking-[0.12em] uppercase mb-2">NTB License number <span className="text-red-500 ml-1">*</span></label>
                 <div className="relative flex items-center">
-                  <svg className="absolute left-3.5 text-[#5a7060] pointer-events-none" width="18" height="18" viewBox="0 0 18 18" fill="none">
+                  <svg className="absolute left-3.5 text-stone-400 pointer-events-none" width="18" height="18" viewBox="0 0 18 18" fill="none">
                     <rect x="2" y="3" width="14" height="12" rx="2" stroke="currentColor" strokeWidth="1.4" />
                     <path d="M5 7h8M5 10h5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
                   </svg>
-                  <input id="licenseNumber" type="text" name="licenseNumber" value={form.licenseNumber} onChange={handleChange} placeholder="e.g. NTB-G-2024-XXXXX"
-                    className="w-full bg-white/[0.04] border border-white/10 rounded-xl py-[11px] pl-11 pr-4 font-sans text-[14px] font-light text-[#f0e4c8] outline-none transition-all placeholder:text-[#4a6050] focus:border-[#e0b874]/50 focus:bg-white/[0.08] focus:ring-[3px] focus:ring-[#e0b874]/10" />
+                  <input id="licenseNumber" type="text" name="licenseNumber" value={form.licenseNumber} onChange={handleChange} placeholder="e.g. NTB-G-2024-XXXXX" className={INPUT_SM} />
                 </div>
-                {errors.licenseNumber && <span className="block text-[12.5px] text-[#f08070] mt-1.5">{errors.licenseNumber}</span>}
+                {errors.licenseNumber && <span className={ERR_CLS}>{errors.licenseNumber}</span>}
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label htmlFor="yearsExperience" className="flex items-center text-[12px] font-medium text-[#9ab0a0] tracking-[0.12em] uppercase mb-2">Experience <span className="text-[#e05040] ml-1">*</span></label>
-                  <select id="yearsExperience" name="yearsExperience" value={form.yearsExperience} onChange={handleChange}
-                    className="w-full bg-white/[0.04] border border-white/10 rounded-xl py-[11px] px-3 font-sans text-[14px] font-light text-[#f0e4c8] outline-none transition-all focus:border-[#e0b874]/50 focus:bg-white/[0.08] focus:ring-[3px] focus:ring-[#e0b874]/10 appearance-none cursor-pointer">
-                    <option value="" className="bg-[#0d1428]">Years</option>
-                    {["1–2", "3–5", "6–10", "10+"].map((y) => <option key={y} value={y} className="bg-[#0d1428]">{y} yrs</option>)}
+                  <label htmlFor="yearsExperience" className="flex items-center text-[12px] font-semibold text-stone-500 tracking-[0.12em] uppercase mb-2">Experience <span className="text-red-500 ml-1">*</span></label>
+                  <select id="yearsExperience" name="yearsExperience" value={form.yearsExperience} onChange={handleChange} className={SELECT_CLS}>
+                    <option value="">Years</option>
+                    {["1–2", "3–5", "6–10", "10+"].map((y) => <option key={y} value={y}>{y} yrs</option>)}
                   </select>
-                  {errors.yearsExperience && <span className="block text-[12.5px] text-[#f08070] mt-1.5">{errors.yearsExperience}</span>}
+                  {errors.yearsExperience && <span className={ERR_CLS}>{errors.yearsExperience}</span>}
                 </div>
                 <div>
-                  <label htmlFor="specialization" className="flex items-center text-[12px] font-medium text-[#9ab0a0] tracking-[0.12em] uppercase mb-2">Specialization <span className="text-[#e05040] ml-1">*</span></label>
-                  <select id="specialization" name="specialization" value={form.specialization} onChange={handleChange}
-                    className="w-full bg-white/[0.04] border border-white/10 rounded-xl py-[11px] px-3 font-sans text-[14px] font-light text-[#f0e4c8] outline-none transition-all focus:border-[#e0b874]/50 focus:bg-white/[0.08] focus:ring-[3px] focus:ring-[#e0b874]/10 appearance-none cursor-pointer">
-                    <option value="" className="bg-[#0d1428]">Route</option>
-                    {SPECIALIZATIONS.map((s) => <option key={s} value={s} className="bg-[#0d1428]">{s}</option>)}
+                  <label htmlFor="specialization" className="flex items-center text-[12px] font-semibold text-stone-500 tracking-[0.12em] uppercase mb-2">Specialization <span className="text-red-500 ml-1">*</span></label>
+                  <select id="specialization" name="specialization" value={form.specialization} onChange={handleChange} className={SELECT_CLS}>
+                    <option value="">Route</option>
+                    {SPECIALIZATIONS.map((s) => <option key={s} value={s}>{s}</option>)}
                   </select>
-                  {errors.specialization && <span className="block text-[12.5px] text-[#f08070] mt-1.5">{errors.specialization}</span>}
+                  {errors.specialization && <span className={ERR_CLS}>{errors.specialization}</span>}
                 </div>
               </div>
             </div>
           )}
 
           <div className="mb-5 mt-4">
-            <label htmlFor="phone" className="flex items-center text-[12px] font-medium text-[#9ab0a0] tracking-[0.12em] uppercase mb-2">
+            <label htmlFor="phone" className="flex items-center text-[12px] font-semibold text-stone-500 tracking-[0.12em] uppercase mb-2">
               Phone number
-              {form.role === "trekker" && <span className="text-[#4a6050] font-light normal-case tracking-normal ml-1">(optional)</span>}
-              {form.role === "guide" && <span className="text-[#e05040] ml-1">*</span>}
+              {form.role === "trekker" && <span className="text-stone-400 font-light normal-case tracking-normal ml-1">(optional)</span>}
+              {form.role === "guide" && <span className="text-red-500 ml-1">*</span>}
             </label>
             <div className="relative flex items-center">
-              <svg className="absolute left-3.5 text-[#5a7060] pointer-events-none" width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <svg className="absolute left-3.5 text-stone-400 pointer-events-none" width="18" height="18" viewBox="0 0 18 18" fill="none">
                 <rect x="5" y="1.5" width="8" height="15" rx="2" stroke="currentColor" strokeWidth="1.4" />
                 <circle cx="9" cy="13.5" r=".75" fill="currentColor" />
               </svg>
-              <input id="phone" type="tel" name="phone" value={form.phone} onChange={handleChange} placeholder="+977 98XXXXXXXX" autoComplete="tel"
-                className="w-full bg-white/[0.04] border border-white/10 rounded-xl py-[13px] pl-11 pr-4 font-sans text-[15px] font-light text-[#f0e4c8] outline-none transition-all placeholder:text-[#4a6050] focus:border-[#e0b874]/50 focus:bg-white/[0.08] focus:ring-[3px] focus:ring-[#e0b874]/10" />
+              <input id="phone" type="tel" name="phone" value={form.phone} onChange={handleChange} placeholder="+977 98XXXXXXXX" autoComplete="tel" className={INPUT_CLS} />
             </div>
           </div>
 
-          <div className="flex items-start gap-2.5 mb-5 text-[13.5px] text-[#7a9080] leading-relaxed">
-            <input type="checkbox" id="terms" required className="w-4 h-4 mt-[2px] shrink-0 accent-[#e0b874] cursor-pointer" />
+          <div className="flex items-start gap-2.5 mb-5 text-[13.5px] text-stone-600 leading-relaxed">
+            <input type="checkbox" id="terms" required className="w-4 h-4 mt-[2px] shrink-0 accent-forest-500 cursor-pointer" />
             <label htmlFor="terms">
-              I agree to the <a href="/terms" className="text-[#e0b874] hover:text-[#f0cc88]">Terms of Service</a> and{" "}
-              <a href="/privacy" className="text-[#e0b874] hover:text-[#f0cc88]">Privacy Policy</a>
+              I agree to the <a href="/terms" className="text-forest-600 hover:text-forest-700">Terms of Service</a> and{" "}
+              <a href="/privacy" className="text-forest-600 hover:text-forest-700">Privacy Policy</a>
             </label>
           </div>
 
           <div className="flex max-sm:flex-col-reverse gap-3 mt-1.5">
-            <button type="button" className="flex-1 bg-white/[0.06] border border-white/10 text-[#9ab0a0] rounded-xl p-[14px] font-sans text-[15px] font-medium tracking-wide flex items-center justify-center cursor-pointer transition-all hover:bg-white/[0.1]" onClick={() => setStep(1)}>
+            <button type="button" className="flex-1 bg-stone-100 border border-stone-200 text-stone-600 rounded-xl p-[14px] text-[15px] font-medium tracking-wide flex items-center justify-center cursor-pointer transition-all hover:bg-stone-200" onClick={() => setStep(1)}>
               &larr; Back
             </button>
-            <button type="submit" disabled={loading} className="flex-[2] bg-gradient-to-br from-[#e8c07c] via-[#d0a45a] to-[#a8853a] text-[#0e1a14] rounded-xl p-[14px] font-sans text-[15px] font-semibold tracking-wide flex items-center justify-center gap-2 cursor-pointer transition-all shadow-[0_10px_30px_-8px_rgba(224,184,116,0.5)] hover:-translate-y-[1px] hover:shadow-[0_14px_36px_-8px_rgba(224,184,116,0.6)] active:translate-y-0 disabled:opacity-70 disabled:cursor-not-allowed">
-              {loading ? <span className="w-[18px] h-[18px] border-2 border-black/20 border-t-[#0e1a14] rounded-full animate-spin" /> : form.role === "guide" ? "Submit for review" : "Create account"}
+            <button type="submit" disabled={loading} className="flex-[2] bg-forest-500 text-white rounded-xl p-[14px] text-[15px] font-semibold tracking-wide flex items-center justify-center gap-2 cursor-pointer transition-all hover:bg-forest-600 hover:-translate-y-[1px] hover:shadow-lg active:translate-y-0 disabled:opacity-70 disabled:cursor-not-allowed">
+              {loading ? <span className="w-[18px] h-[18px] border-2 border-white/30 border-t-white rounded-full animate-spin" /> : form.role === "guide" ? "Submit for review" : "Create account"}
             </button>
           </div>
         </form>
@@ -529,62 +459,54 @@ export default function Register() {
       {/* ── Step 3 — OTP ── */}
       {step === 3 && (
         <form onSubmit={handleVerifyOtp} noValidate>
-          {/* Email icon */}
           <div className="flex items-center justify-center mb-7">
-            <div className="w-16 h-16 rounded-2xl bg-[#e0b874]/10 border border-[#e0b874]/20 flex items-center justify-center">
+            <div className="w-16 h-16 rounded-2xl bg-forest-100 border border-forest-200 flex items-center justify-center">
               <svg width="30" height="30" viewBox="0 0 30 30" fill="none">
-                <rect x="2.5" y="7" width="25" height="17" rx="3" stroke="#e0b874" strokeWidth="1.6" />
-                <path d="M2.5 11L15 18.5L27.5 11" stroke="#e0b874" strokeWidth="1.6" strokeLinejoin="round" />
+                <rect x="2.5" y="7" width="25" height="17" rx="3" stroke="#2D6A4F" strokeWidth="1.6" />
+                <path d="M2.5 11L15 18.5L27.5 11" stroke="#2D6A4F" strokeWidth="1.6" strokeLinejoin="round" />
               </svg>
             </div>
           </div>
 
-          {/* OTP boxes */}
           <div className="mb-2">
             <OtpInput value={otp} onChange={setOtp} />
           </div>
 
-          {errors.otp && (
-            <p className="text-center text-[13px] text-[#f08070] mt-3 mb-1">{errors.otp}</p>
-          )}
+          {errors.otp && <p className="text-center text-[13px] text-red-500 mt-3 mb-1">{errors.otp}</p>}
 
-          <p className="text-center text-[12px] text-[#5a7068] mt-3 mb-6">
-            Code expires in 10 minutes
-          </p>
+          <p className="text-center text-[12px] text-stone-400 mt-3 mb-6">Code expires in 10 minutes</p>
 
           <button type="submit" disabled={loading || otp.replace(/\s/g, "").length < 6}
-            className="w-full bg-gradient-to-br from-[#e8c07c] via-[#d0a45a] to-[#a8853a] text-[#0e1a14] rounded-xl p-[14px] font-sans text-[15px] font-semibold tracking-wide flex items-center justify-center gap-2 cursor-pointer transition-all shadow-[0_10px_30px_-8px_rgba(224,184,116,0.5)] hover:-translate-y-[1px] hover:shadow-[0_14px_36px_-8px_rgba(224,184,116,0.6)] active:translate-y-0 disabled:opacity-60 disabled:cursor-not-allowed disabled:translate-y-0">
-            {loading ? <span className="w-[18px] h-[18px] border-2 border-black/20 border-t-[#0e1a14] rounded-full animate-spin" /> : "Verify & continue"}
+            className="w-full bg-forest-500 text-white rounded-xl p-[14px] text-[15px] font-semibold tracking-wide flex items-center justify-center gap-2 cursor-pointer transition-all hover:bg-forest-600 hover:-translate-y-[1px] hover:shadow-lg active:translate-y-0 disabled:opacity-60 disabled:cursor-not-allowed disabled:translate-y-0">
+            {loading ? <span className="w-[18px] h-[18px] border-2 border-white/30 border-t-white rounded-full animate-spin" /> : "Verify & continue"}
           </button>
 
-          {/* Resend */}
-          <div className="flex items-center justify-center gap-1 mt-5 text-[13.5px] text-[#7a9080]">
+          <div className="flex items-center justify-center gap-1 mt-5 text-[13.5px] text-stone-500">
             <span>Didn't receive it?</span>
             {canResend ? (
               <button type="button" onClick={handleResendOtp} disabled={loading}
-                className="text-[#e0b874] font-medium hover:text-[#f0cc88] disabled:opacity-60 cursor-pointer bg-transparent border-none">
+                className="text-forest-600 font-medium hover:text-forest-700 disabled:opacity-60 cursor-pointer bg-transparent border-none">
                 Resend code
               </button>
             ) : (
-              <span className="text-[#5a7060]">Resend in {resendTimer}s</span>
+              <span className="text-stone-400">Resend in {resendTimer}s</span>
             )}
           </div>
 
-          <button type="button" onClick={() => setStep(2)} className="w-full mt-4 text-[13px] text-[#5a7060] hover:text-[#9ab0a0] transition-colors text-center">
+          <button type="button" onClick={() => setStep(2)} className="w-full mt-4 text-[13px] text-stone-400 hover:text-stone-600 transition-colors text-center">
             ← Use a different email
           </button>
         </form>
       )}
 
-      {/* Google + sign-in link — hide on OTP step */}
       {step < 3 && (
         <>
-          <div className="flex items-center gap-3 my-6 text-[12px] text-[#4a6050] tracking-wide before:content-[''] before:flex-1 before:h-px before:bg-white/10 after:content-[''] after:flex-1 after:h-px after:bg-white/10">
+          <div className="flex items-center gap-3 my-6 text-[12px] text-stone-400 tracking-wide before:content-[''] before:flex-1 before:h-px before:bg-stone-200 after:content-[''] after:flex-1 after:h-px after:bg-stone-200">
             <span>OR SIGN UP WITH</span>
           </div>
           <div className="flex max-sm:flex-col gap-3 mb-6">
             <button type="button" onClick={() => handleGoogleRegister()} disabled={loading}
-              className="flex-1 flex items-center justify-center gap-2 bg-white/[0.04] border border-white/10 rounded-xl p-3 font-sans text-[14px] text-[#b8c0b0] cursor-pointer transition-all hover:bg-white/[0.09] hover:border-white/20 hover:text-[#f0e4c8] disabled:opacity-60 disabled:cursor-not-allowed">
+              className="flex-1 flex items-center justify-center gap-2 bg-white border border-stone-200 rounded-xl p-3 text-[14px] text-stone-600 cursor-pointer transition-all hover:bg-stone-50 hover:border-stone-300 hover:text-stone-900 disabled:opacity-60 disabled:cursor-not-allowed">
               <svg width="18" height="18" viewBox="0 0 18 18">
                 <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 01-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4" />
                 <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z" fill="#34A853" />
@@ -594,9 +516,9 @@ export default function Register() {
               Google
             </button>
           </div>
-          <p className="text-center text-[14px] text-[#7a9080]">
+          <p className="text-center text-[14px] text-stone-500">
             Already have an account?{" "}
-            <Link to="/login" className="text-[#e0b874] font-medium hover:text-[#f0cc88] hover:underline">Sign in</Link>
+            <Link to="/login" className="text-forest-600 font-medium hover:text-forest-700 hover:underline">Sign in</Link>
           </p>
         </>
       )}
@@ -607,16 +529,16 @@ export default function Register() {
 function PendingApproval({ name, email }) {
   return (
     <div className="text-center py-4">
-      <div className="flex items-center justify-center w-16 h-16 mx-auto mb-6 rounded-2xl bg-[#4a7a8a]/15 border border-[#4a7a8a]/30">
+      <div className="flex items-center justify-center w-16 h-16 mx-auto mb-6 rounded-2xl bg-blue-50 border border-blue-200">
         <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-          <path d="M16 3L6 7v8c0 6.627 4.477 12.822 10 14 5.523-1.178 10-7.373 10-14V7L16 3z" stroke="#8ac8d8" strokeWidth="1.6" strokeLinejoin="round" />
-          <path d="M11 16l3.5 3.5L21 13" stroke="#8ac8d8" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M16 3L6 7v8c0 6.627 4.477 12.822 10 14 5.523-1.178 10-7.373 10-14V7L16 3z" stroke="#3B82F6" strokeWidth="1.6" strokeLinejoin="round" />
+          <path d="M11 16l3.5 3.5L21 13" stroke="#3B82F6" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </div>
-      <h2 className="font-serif text-[1.7rem] font-bold text-[#f5ead0] mb-2">Application submitted</h2>
-      <p className="text-sm text-[#9ab0a0] mb-6 leading-relaxed">
-        Thank you, <span className="text-[#f0e4c8] font-medium">{name}</span>. Your guide application is under review.<br />
-        We'll send a decision to <span className="text-[#e0b874]">{email}</span> within 2–3 business days.
+      <h2 className="font-serif text-[1.7rem] font-bold text-stone-900 mb-2">Application submitted</h2>
+      <p className="text-sm text-stone-500 mb-6 leading-relaxed">
+        Thank you, <span className="text-stone-800 font-medium">{name}</span>. Your guide application is under review.<br />
+        We'll send a decision to <span className="text-forest-600">{email}</span> within 2–3 business days.
       </p>
       <div className="space-y-3 text-left mb-8">
         {[
@@ -624,13 +546,13 @@ function PendingApproval({ name, email }) {
           { icon: "2", text: "Background & safety record check" },
           { icon: "3", text: "Account activated — you'll receive an email" },
         ].map((s) => (
-          <div key={s.icon} className="flex items-start gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
-            <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[#4a7a8a]/25 text-[#8ac8d8] text-[11px] font-semibold flex items-center justify-center">{s.icon}</span>
-            <span className="text-[13.5px] text-[#9ab8a8] leading-snug">{s.text}</span>
+          <div key={s.icon} className="flex items-start gap-3 p-3 rounded-xl bg-stone-50 border border-stone-200">
+            <span className="flex-shrink-0 w-6 h-6 rounded-full bg-forest-100 text-forest-700 text-[11px] font-semibold flex items-center justify-center">{s.icon}</span>
+            <span className="text-[13.5px] text-stone-600 leading-snug">{s.text}</span>
           </div>
         ))}
       </div>
-      <Link to="/" className="inline-flex items-center justify-center gap-2 w-full bg-white/[0.06] border border-white/10 text-[#9ab0a0] rounded-xl p-[13px] font-sans text-[14px] font-medium tracking-wide cursor-pointer transition-all hover:bg-white/[0.1] hover:text-[#f0e4c8]">
+      <Link to="/" className="inline-flex items-center justify-center gap-2 w-full bg-stone-100 border border-stone-200 text-stone-700 rounded-xl p-[13px] text-[14px] font-medium cursor-pointer transition-all hover:bg-stone-200 hover:text-stone-900">
         Back to home
       </Link>
     </div>

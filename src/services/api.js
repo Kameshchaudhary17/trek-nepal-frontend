@@ -94,6 +94,11 @@ const adminService = {
       body: JSON.stringify({ status }),
     });
   },
+
+  listTrekkers(search = '') {
+    const qs = search ? `?search=${encodeURIComponent(search)}` : '';
+    return request(`/users/admin/trekkers${qs}`, { headers: authHeader() });
+  },
 };
 
 export { guideService, adminService };

@@ -1,10 +1,24 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;1,500&family=DM+Sans:wght@300;400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600&family=DM+Sans:wght@300;400;500;600&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    background-color: #F6F4EF;
+    color: #1C1917;
+    font-family: 'DM Sans', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
 @layer utilities {
+  /* Auth cinematic animations */
   @keyframes auth-twinkle {
     0%, 100% { opacity: 0.15; }
     50% { opacity: 0.85; }
@@ -24,7 +38,7 @@
     50% { transform: translateY(-8px); }
   }
   .animate-auth-twinkle { animation: auth-twinkle 4s ease-in-out infinite; }
-  .animate-auth-drift { animation: auth-drift linear infinite; }
-  .animate-auth-aurora { animation: auth-aurora 14s ease-in-out infinite; }
-  .animate-auth-float { animation: auth-float 6s ease-in-out infinite; }
+  .animate-auth-drift   { animation: auth-drift linear infinite; }
+  .animate-auth-aurora  { animation: auth-aurora 14s ease-in-out infinite; }
+  .animate-auth-float   { animation: auth-float 6s ease-in-out infinite; }
 }
