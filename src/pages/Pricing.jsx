@@ -1,8 +1,9 @@
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Navbar from "../components/ui/Navbar";
 import PriceCalculator from "../components/pricing/PriceCalculator";
 import PriceCompare from "../components/pricing/PriceCompare";
-import { TREK_PRICES, GUIDE_TIERS, PLATFORM_FEE_PCT } from "../data/pricing";
+import { pricingService } from "../services/api";
 
 const PHASES = [
   {
@@ -40,23 +41,39 @@ function Wrap({ children, className = "" }) {
   return <div className={`max-w-[1200px] mx-auto px-5 sm:px-8 ${className}`}>{children}</div>;
 }
 
-function BasePricingTable() {
+function TableSkeleton() {
+  return (
+    <div className="overflow-x-auto rounded-2xl border border-stone-200 bg-white">
+      <div className="p-8 space-y-3">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} className="h-10 rounded-lg bg-stone-100 animate-pulse" style={{ opacity: 1 - i * 0.12 }} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function BasePricingTable({ trekPrices }) {
   return (
     <div className="overflow-x-auto rounded-2xl border border-stone-200 bg-white">
       <table className="w-full min-w-[680px] text-[13.5px]">
         <thead>
           <tr className="bg-stone-50 border-b border-stone-200">
-            {["Trek Route", "Difficulty", "Duration", "Base Cost Range", "Permits", "Seasonal Adj."].map((h) => (
+            {["Trek Route", "Difficulty", "Duration", "Base Cost Range", "Permits", "Season"].map((h) => (
               <th key={h} className="px-5 py-3.5 text-left text-[11px] uppercase tracking-[0.12em] text-stone-400 font-semibold">{h}</th>
             ))}
           </tr>
         </thead>
         <tbody>
-          {TREK_PRICES.map((t, i) => {
+          {trekPrices.map((t, i) => {
             const permitTotal = t.permits.reduce((s, p) => s + p.cost, 0);
-            const diffColor = t.difficulty === "Hard" ? "bg-red-50 text-red-700 border-red-200" : t.difficulty === "Moderate" ? "bg-forest-50 text-forest-700 border-forest-200" : "bg-amber-50 text-amber-700 border-amber-200";
+            const diffColor =
+              t.difficulty === "Hard" ? "bg-red-50 text-red-700 border-red-200"
+              : t.difficulty === "Easy" ? "bg-green-50 text-green-700 border-green-200"
+              : t.difficulty === "Moderate" ? "bg-forest-50 text-forest-700 border-forest-200"
+              : "bg-amber-50 text-amber-700 border-amber-200";
             return (
-              <tr key={t.id} className={`border-b border-stone-100 hover:bg-stone-50 transition-colors ${i % 2 === 1 ? "bg-stone-50/50" : ""}`}>
+              <tr key={t.trekId} className={`border-b border-stone-100 hover:bg-stone-50 transition-colors ${i % 2 === 1 ? "bg-stone-50/50" : ""}`}>
                 <td className="px-5 py-4">
                   <div className="flex items-center gap-2">
                     <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: t.color }} />
@@ -87,10 +104,10 @@ function BasePricingTable() {
   );
 }
 
-function GuideTierTable() {
+function GuideTierTable({ guideTiers }) {
   return (
     <div className="grid sm:grid-cols-3 gap-4">
-      {GUIDE_TIERS.map((g) => (
+      {guideTiers.map((g) => (
         <div key={g.id} className="p-5 rounded-2xl border border-stone-200 bg-white hover:border-stone-300 hover:shadow-sm transition-all">
           <div className="flex items-center gap-2 mb-3">
             <span className="w-3 h-3 rounded-full" style={{ background: g.color }} />
@@ -112,6 +129,20 @@ function GuideTierTable() {
 }
 
 export default function Pricing() {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    setLoading(true);
+    pricingService.getConfig()
+      .then(setData)
+      .catch(() => setError("Failed to load pricing data."))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const platformFeePct = data?.platformFeePct ?? 5;
+
   return (
     <div className="min-h-screen bg-stone-50 font-sans text-stone-900 overflow-x-hidden">
       <Navbar />
@@ -147,7 +178,7 @@ export default function Pricing() {
         <Wrap className="py-4 flex flex-wrap items-center justify-center gap-x-8 gap-y-2 text-[13px]">
           {[
             { icon: "✓", text: "NTB-verified guides only" },
-            { icon: "ℹ", text: `${PLATFORM_FEE_PCT}% platform fee — shown upfront, no surprises` },
+            { icon: "ℹ", text: `${platformFeePct}% platform fee — shown upfront, no surprises` },
             { icon: "✓", text: "Admin approves all guide rate changes" },
           ].map((item) => (
             <span key={item.text} className="flex items-center gap-2 text-forest-700 font-medium">
@@ -192,14 +223,18 @@ export default function Pricing() {
       <div className="py-20 sm:py-24 bg-stone-50">
         <Wrap>
           <SectionHead eyebrow="Admin-set Rates" title="Trek Base Pricing" sub="Set and maintained by the platform admin. All costs are in USD per trekker." />
-          <BasePricingTable />
+          {loading ? <TableSkeleton /> : error ? (
+            <div className="p-8 rounded-2xl border border-red-200 bg-red-50 text-red-700 text-center text-[14px]">{error}</div>
+          ) : (
+            <BasePricingTable trekPrices={data.trekPrices} />
+          )}
           <div className="mt-6 flex items-start gap-3 p-4 rounded-xl bg-blue-50 border border-blue-200">
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none" className="text-blue-500 shrink-0 mt-0.5">
               <circle cx="9" cy="9" r="7.5" stroke="currentColor" strokeWidth="1.3" />
               <path d="M9 8v4M9 6v.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
             </svg>
             <p className="text-[12.5px] text-blue-700 leading-relaxed">
-              Base cost = trek logistics (accommodation, food, transport). Guide fees are additional and vary by tier. Permits are fixed government costs. A <strong>{PLATFORM_FEE_PCT}%</strong> platform fee applies to the total — always shown before you confirm.
+              Base cost = trek logistics (accommodation, food, transport). Guide fees are additional and vary by tier. Permits are fixed government costs. A <strong>{platformFeePct}%</strong> platform fee applies to the total — always shown before you confirm.
             </p>
           </div>
         </Wrap>
@@ -209,7 +244,15 @@ export default function Pricing() {
       <div className="py-20 sm:py-24 bg-white">
         <Wrap>
           <SectionHead eyebrow="Guide Rates" title="Admin-Defined Tier Bands" sub="Every guide must quote within these admin-approved ranges. No guide can set prices outside these limits." />
-          <GuideTierTable />
+          {loading ? (
+            <div className="grid sm:grid-cols-3 gap-4">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="h-44 rounded-2xl bg-stone-100 animate-pulse" />
+              ))}
+            </div>
+          ) : error ? null : (
+            <GuideTierTable guideTiers={data.guideTiers} />
+          )}
           <p className="text-center text-[12.5px] text-stone-400 mt-6">
             Phase 2: Verified guides submit proposed daily rates → admin review → approved rates listed publicly.
           </p>
@@ -219,8 +262,17 @@ export default function Pricing() {
       {/* ── Calculator ── */}
       <div id="calculator" className="py-20 sm:py-24 bg-stone-50">
         <Wrap>
-          <SectionHead eyebrow="Estimate" title="Calculate Your Trek Cost" sub="Interactive breakdown using admin base rates. Adjust route, duration, guide tier and season." />
-          <PriceCalculator />
+          <SectionHead eyebrow="Estimate" title="Calculate Your Trek Cost" sub="Interactive breakdown using live admin base rates. Adjust route, duration, guide tier and season." />
+          {loading ? <TableSkeleton /> : error ? null : (
+            <PriceCalculator
+              trekPrices={data.trekPrices}
+              guideTiers={data.guideTiers}
+              seasons={data.seasons}
+              porterRatePerDay={data.porterRatePerDay}
+              platformFeePct={data.platformFeePct}
+              aiNotice={data.aiNotice}
+            />
+          )}
         </Wrap>
       </div>
 
@@ -228,7 +280,13 @@ export default function Pricing() {
       <div className="py-20 sm:py-24 bg-white">
         <Wrap>
           <SectionHead eyebrow="Compare" title="Side-by-Side Route Costs" sub="Compare any 2–4 routes at a glance. Filters apply to all columns simultaneously." />
-          <PriceCompare />
+          {loading ? <TableSkeleton /> : error ? null : (
+            <PriceCompare
+              trekPrices={data.trekPrices}
+              guideTiers={data.guideTiers}
+              seasons={data.seasons}
+            />
+          )}
         </Wrap>
       </div>
 
@@ -240,7 +298,7 @@ export default function Pricing() {
             {[
               { q: "Who sets the prices on TrekDirect?", a: "Currently, platform admin sets all base costs, permit fees, and guide rate bands. Guides cannot set unlimited prices — they must stay within admin-defined min/max tiers. This prevents scams and pricing manipulation." },
               { q: "Can guides set their own rates?", a: "Phase 2 will allow verified guides to propose a daily rate. It must fall inside the admin band for their tier. Admin reviews every proposal before it goes live — guides get feedback on rejections." },
-              { q: "What is the platform fee?", a: `${PLATFORM_FEE_PCT}% of the total booking value. It is always displayed in the cost breakdown before you confirm — no hidden charges.` },
+              { q: "What is the platform fee?", a: `${platformFeePct}% of the total booking value. It is always displayed in the cost breakdown before you confirm — no hidden charges.` },
               { q: "What does 'base cost' cover?", a: "Trek logistics: tea house accommodation, standard meals on the trail, internal transport, and group equipment. Guide fees, porter fees and government permits are all itemised separately." },
               { q: "Why do prices vary by season?", a: "Peak season (Oct–Nov, Mar–Apr) has higher demand. We apply multipliers to base costs to reflect real market conditions. Low season can be 35% cheaper on the same route." },
               { q: "What is AI pricing (Phase 3)?", a: "An AI layer that analyses seasonal trends, route difficulty, and historical booking data to suggest fair prices to guides and admin. Admin still holds final approval — AI only recommends, never overrides." },

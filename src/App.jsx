@@ -7,6 +7,8 @@ import AdminDashboard from './pages/AdminDashboard';
 import GuideListing from './pages/GuideListing';
 import Dashboard from './pages/Dashboard';
 import GuideDashboard from './pages/GuideDashboard';
+import Conditions from './pages/Conditions';
+import Treks from './pages/Treks';
 
 function App() {
   return (
@@ -21,6 +23,8 @@ function App() {
         <Route path="/guides" element={<GuideListing />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/guide/dashboard" element={<GuideDashboard />} />
+        <Route path="/conditions" element={<Conditions />} />
+        <Route path="/treks" element={<Treks />} />
       </Routes>
     </Router>
   );

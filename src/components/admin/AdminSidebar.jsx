@@ -1,9 +1,10 @@
 const NAV_ITEMS = [
-  { id: "overview", label: "Overview", icon: OverviewIcon },
-  { id: "guides", label: "Guide Verification", icon: ShieldIcon },
-  { id: "users", label: "Users", icon: UsersIcon },
-  { id: "pricing", label: "Pricing", icon: PricingIcon },
-  { id: "settings", label: "Settings", icon: SettingsIcon },
+  { id: "overview", label: "Overview",           icon: OverviewIcon },
+  { id: "guides",   label: "Guide Verification", icon: ShieldIcon   },
+  { id: "users",    label: "Users",              icon: UsersIcon    },
+  { id: "treks",    label: "Trek Routes",        icon: TreksIcon    },
+  { id: "pricing",  label: "Pricing",            icon: PricingIcon  },
+  { id: "settings", label: "Settings",           icon: SettingsIcon },
 ];
 
 export { NAV_ITEMS };
@@ -93,6 +94,15 @@ function PricingIcon({ active }) {
   return (
     <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
       <path d="M8 1v14M5 4h4.5a2.5 2.5 0 010 5H5M5 9h5a2.5 2.5 0 010 5H5" stroke={active ? "#2D6A4F" : "currentColor"} strokeWidth="1.3" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function TreksIcon({ active }) {
+  return (
+    <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
+      <path d="M8 1L15 14H1L8 1Z" stroke={active ? "#2D6A4F" : "currentColor"} strokeWidth="1.3" strokeLinejoin="round" />
+      <path d="M5 14L8 8L11 14" stroke={active ? "#2D6A4F" : "currentColor"} strokeWidth="1.1" strokeLinejoin="round" opacity="0.6" />
     </svg>
   );
 }

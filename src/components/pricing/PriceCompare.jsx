@@ -1,20 +1,23 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { TREK_PRICES, GUIDE_TIERS, SEASONS } from "../../data/pricing";
 
 const DIFFICULTY_COLOR = {
   Hard: "bg-red-50 text-red-700 border-red-200",
   "Moderate–Hard": "bg-amber-50 text-amber-700 border-amber-200",
   Moderate: "bg-forest-50 text-forest-700 border-forest-200",
+  Easy: "bg-green-50 text-green-700 border-green-200",
 };
 
-export default function PriceCompare() {
-  const [selected, setSelected] = useState(["ebc", "annapurna", "langtang"]);
-  const [seasonId, setSeasonId] = useState("peak");
-  const [tierId, setTierId] = useState("senior");
+export default function PriceCompare({ trekPrices, guideTiers, seasons }) {
+  const defaultSelected = trekPrices.slice(0, 3).map((t) => t.trekId);
+  const [selected, setSelected] = useState(defaultSelected);
+  const [seasonId, setSeasonId] = useState(seasons[0]?.id ?? "peak");
+  const [tierId, setTierId] = useState(guideTiers[1]?.id ?? "senior");
 
-  const season = SEASONS.find((s) => s.id === seasonId);
-  const tier = GUIDE_TIERS.find((g) => g.id === tierId);
+  const season = seasons.find((s) => s.id === seasonId) ?? seasons[0];
+  const tier = guideTiers.find((g) => g.id === tierId) ?? guideTiers[0];
+
+  if (!season || !tier) return null;
 
   const toggleTrek = (id) => {
     if (selected.includes(id)) {
@@ -24,7 +27,7 @@ export default function PriceCompare() {
     }
   };
 
-  const treks = TREK_PRICES.filter((t) => selected.includes(t.id));
+  const treks = trekPrices.filter((t) => selected.includes(t.trekId));
 
   const estimateTotal = (trek) => {
     const base = ((trek.baseCost.min + trek.baseCost.max) / 2) * season.multiplier;
@@ -34,8 +37,10 @@ export default function PriceCompare() {
     return Math.round(base + guide + permits);
   };
 
-  const lowestId = treks.reduce((a, b) => (estimateTotal(a) < estimateTotal(b) ? a : b)).id;
-  const highestId = treks.reduce((a, b) => (estimateTotal(a) > estimateTotal(b) ? a : b)).id;
+  if (treks.length < 2) return null;
+
+  const lowestId = treks.reduce((a, b) => (estimateTotal(a) < estimateTotal(b) ? a : b)).trekId;
+  const highestId = treks.reduce((a, b) => (estimateTotal(a) > estimateTotal(b) ? a : b)).trekId;
 
   return (
     <div className="bg-white border border-stone-200 rounded-2xl overflow-hidden shadow-sm">
@@ -48,8 +53,8 @@ export default function PriceCompare() {
       <div className="px-6 pt-5 pb-4 flex flex-wrap gap-4 border-b border-stone-100">
         <div>
           <label className="block text-[11px] uppercase tracking-[0.12em] text-stone-400 font-semibold mb-1.5">Season</label>
-          <div className="flex gap-2">
-            {SEASONS.map((s) => (
+          <div className="flex gap-2 flex-wrap">
+            {seasons.map((s) => (
               <button
                 key={s.id}
                 onClick={() => setSeasonId(s.id)}
@@ -64,8 +69,8 @@ export default function PriceCompare() {
         </div>
         <div>
           <label className="block text-[11px] uppercase tracking-[0.12em] text-stone-400 font-semibold mb-1.5">Guide tier</label>
-          <div className="flex gap-2">
-            {GUIDE_TIERS.map((g) => (
+          <div className="flex gap-2 flex-wrap">
+            {guideTiers.map((g) => (
               <button
                 key={g.id}
                 onClick={() => setTierId(g.id)}
@@ -82,12 +87,12 @@ export default function PriceCompare() {
 
       {/* Route selector chips */}
       <div className="px-6 pt-4 pb-3 flex flex-wrap gap-2 border-b border-stone-100">
-        {TREK_PRICES.map((t) => {
-          const active = selected.includes(t.id);
+        {trekPrices.map((t) => {
+          const active = selected.includes(t.trekId);
           return (
             <button
-              key={t.id}
-              onClick={() => toggleTrek(t.id)}
+              key={t.trekId}
+              onClick={() => toggleTrek(t.trekId)}
               className={`px-3 py-1.5 rounded-lg text-[12px] border transition-all flex items-center gap-1.5 font-medium ${
                 active ? "border-stone-300 text-stone-800 bg-stone-100" : "border-stone-200 text-stone-500 bg-stone-50 hover:bg-stone-100"
               }`}
@@ -106,15 +111,15 @@ export default function PriceCompare() {
           {treks.map((t) => {
             const total = estimateTotal(t);
             const avgDays = Math.round((t.minDays + t.maxDays) / 2);
-            const isLowest = t.id === lowestId;
-            const isHighest = t.id === highestId;
+            const isLowest = t.trekId === lowestId;
+            const isHighest = t.trekId === highestId;
             const permits = t.permits.reduce((s, p) => s + p.cost, 0);
             const base = Math.round(((t.baseCost.min + t.baseCost.max) / 2) * season.multiplier);
             const guide = Math.round(((tier.ratePerDay.min + tier.ratePerDay.max) / 2) * avgDays);
 
             return (
               <div
-                key={t.id}
+                key={t.trekId}
                 className={`rounded-xl border p-4 flex flex-col gap-3 transition-all ${
                   isLowest ? "border-forest-300 bg-forest-50" : isHighest ? "border-terra-200 bg-terra-50" : "border-stone-200 bg-stone-50"
                 }`}

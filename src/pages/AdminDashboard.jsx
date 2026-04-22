@@ -8,6 +8,7 @@ import GuidesSection from "../components/admin/GuidesSection";
 import UsersSection from "../components/admin/UsersSection";
 import PricingSection from "../components/admin/PricingSection";
 import SettingsSection from "../components/admin/SettingsSection";
+import TreksSection from "../components/admin/TreksSection";
 
 /* ── Mock data ────────────────────────────────────────────────── */
 const MOCK_STATS = {
@@ -26,13 +27,6 @@ const MOCK_USERS = [
   { id: "6", name: "Lucas Ferreira",   email: "lucas@email.br",      role: "trekker", joinedAt: "Apr 3, 2026",  bookings: 1 },
 ];
 
-const TREK_PRICES_INIT = [
-  { id: "ebc",       name: "Everest Base Camp",  minCost: 1200, maxCost: 1800, permits: 750, duration: "14 days" },
-  { id: "annapurna", name: "Annapurna Circuit",  minCost: 900,  maxCost: 1400, permits: 200, duration: "18 days" },
-  { id: "langtang",  name: "Langtang Valley",    minCost: 600,  maxCost: 900,  permits: 150, duration: "10 days" },
-  { id: "mustang",   name: "Upper Mustang",      minCost: 1800, maxCost: 2800, permits: 500, duration: "12 days" },
-  { id: "manaslu",   name: "Manaslu Circuit",    minCost: 1100, maxCost: 1600, permits: 350, duration: "16 days" },
-];
 
 const ACTIVITY = [
   { id: 1, text: "Kamesh Chaudhary registered as a guide",  time: "2 hours ago", icon: "👤" },
@@ -61,11 +55,6 @@ export default function AdminDashboard() {
   const [trekkersLoading, setTrekkersLoading] = useState(false);
   const [trekkerSearch, setTrekkerSearch] = useState("");
 
-  // Pricing state
-  const [trekPrices,   setTrekPrices]   = useState(TREK_PRICES_INIT);
-  const [savedRows,    setSavedRows]    = useState({});
-  const [aiFactor,     setAiFactor]     = useState({ season: "Autumn", demand: 0.85, baseCost: 800 });
-  const [aiResult,     setAiResult]     = useState(null);
 
   // Auth guard
   useEffect(() => {
@@ -172,27 +161,6 @@ export default function AdminDashboard() {
     }
   }
 
-  function updatePrice(id, field, val) {
-    setTrekPrices((prev) => prev.map((t) => t.id === id ? { ...t, [field]: val } : t));
-  }
-
-  function saveRow(id) {
-    setSavedRows((prev) => ({ ...prev, [id]: true }));
-    setTimeout(() => setSavedRows((prev) => ({ ...prev, [id]: false })), 2000);
-    showToast("Pricing updated.");
-  }
-
-  function simulateAI() {
-    const base    = parseFloat(aiFactor.baseCost) || 800;
-    const mSeason = (aiFactor.season === "Spring" || aiFactor.season === "Autumn") ? 1.15 : 0.90;
-    const mDemand = 1.0 + aiFactor.demand * 0.20;
-    setAiResult({
-      price:      Math.round(base * mSeason * mDemand),
-      confidence: `${Math.floor(Math.random() * 8 + 86)}%`,
-      seasonMult: mSeason.toFixed(2),
-      demandMult: mDemand.toFixed(2),
-    });
-  }
 
   return (
     <div className="min-h-screen bg-stone-50 font-sans">
@@ -262,18 +230,8 @@ export default function AdminDashboard() {
                 onSearch={handleTrekkerSearch}
               />
             )}
-            {activeTab === "pricing"  && (
-              <PricingSection
-                trekPrices={trekPrices}
-                savedRows={savedRows}
-                aiFactor={aiFactor}
-                aiResult={aiResult}
-                onUpdatePrice={updatePrice}
-                onSaveRow={saveRow}
-                onAiChange={(field, val) => setAiFactor((p) => ({ ...p, [field]: val }))}
-                onSimulate={simulateAI}
-              />
-            )}
+            {activeTab === "pricing" && <PricingSection showToast={showToast} />}
+            {activeTab === "treks"    && <TreksSection showToast={showToast} />}
             {activeTab === "settings" && <SettingsSection />}
           </div>
         </main>

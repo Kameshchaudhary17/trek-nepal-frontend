@@ -1,6 +1,5 @@
 import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { TREK_PRICES, GUIDE_TIERS, SEASONS, PORTER_RATE_PER_DAY, PLATFORM_FEE_PCT, AI_NOTICE } from "../../data/pricing";
 
 function RowLine({ label, value, sub, highlight, indent }) {
   return (
@@ -16,17 +15,19 @@ function RowLine({ label, value, sub, highlight, indent }) {
   );
 }
 
-export default function PriceCalculator() {
-  const [trekId, setTrekId] = useState("ebc");
-  const [days, setDays] = useState(14);
-  const [guideTier, setGuideTier] = useState("senior");
-  const [seasonId, setSeasonId] = useState("peak");
+export default function PriceCalculator({ trekPrices, guideTiers, seasons, porterRatePerDay, platformFeePct, aiNotice }) {
+  const [trekId, setTrekId] = useState(trekPrices[0]?.trekId ?? "");
+  const [days, setDays] = useState(trekPrices[0]?.minDays ?? 12);
+  const [guideTier, setGuideTier] = useState(guideTiers[1]?.id ?? "senior");
+  const [seasonId, setSeasonId] = useState(seasons[0]?.id ?? "peak");
   const [porterCount, setPorterCount] = useState(0);
   const [group, setGroup] = useState(1);
 
-  const trek = TREK_PRICES.find((t) => t.id === trekId);
-  const tier = GUIDE_TIERS.find((g) => g.id === guideTier);
-  const season = SEASONS.find((s) => s.id === seasonId);
+  const trek = trekPrices.find((t) => t.trekId === trekId) ?? trekPrices[0];
+  const tier = guideTiers.find((g) => g.id === guideTier) ?? guideTiers[0];
+  const season = seasons.find((s) => s.id === seasonId) ?? seasons[0];
+
+  if (!trek || !tier || !season) return null;
 
   const validDays = Math.max(trek.minDays, Math.min(trek.maxDays, days));
 
@@ -35,29 +36,28 @@ export default function PriceCalculator() {
     const baseMax = trek.baseCost.max * season.multiplier;
     const guideMin = tier.ratePerDay.min * validDays;
     const guideMax = tier.ratePerDay.max * validDays;
-    const porterMin = porterCount * PORTER_RATE_PER_DAY.min * validDays;
-    const porterMax = porterCount * PORTER_RATE_PER_DAY.max * validDays;
+    const porterMin = porterCount * porterRatePerDay.min * validDays;
+    const porterMax = porterCount * porterRatePerDay.max * validDays;
     const permitTotal = trek.permits.reduce((s, p) => s + p.cost, 0);
     const subtotalMin = baseMin + guideMin + porterMin + permitTotal;
     const subtotalMax = baseMax + guideMax + porterMax + permitTotal;
-    const feeMin = Math.round(subtotalMin * (PLATFORM_FEE_PCT / 100));
-    const feeMax = Math.round(subtotalMax * (PLATFORM_FEE_PCT / 100));
+    const feeMin = Math.round(subtotalMin * (platformFeePct / 100));
+    const feeMax = Math.round(subtotalMax * (platformFeePct / 100));
     const totalMin = Math.round(subtotalMin + feeMin);
     const totalMax = Math.round(subtotalMax + feeMax);
     const g = Math.max(1, group);
     return { baseMin, baseMax, guideMin, guideMax, porterMin, porterMax, permitTotal, feeMin, feeMax, totalMin, totalMax, perPersonMin: Math.round(totalMin / g), perPersonMax: Math.round(totalMax / g) };
-  }, [trek, tier, season, validDays, porterCount, group]);
+  }, [trek, tier, season, validDays, porterCount, group, porterRatePerDay, platformFeePct]);
 
   const fmt = (n) => `$${Math.round(n).toLocaleString()}`;
   const fmtRange = (a, b) => `${fmt(a)}–${fmt(b)}`;
 
   return (
     <div className="bg-white border border-stone-200 rounded-2xl overflow-hidden shadow-sm">
-      {/* Header */}
       <div className="px-6 py-5 border-b border-stone-200 flex items-center justify-between bg-stone-50">
         <div>
           <h3 className="font-serif text-[1.05rem] font-semibold text-stone-900">Price Calculator</h3>
-          <p className="text-[12px] text-stone-400 mt-0.5">Admin-set base rates · Phase 1 MVP</p>
+          <p className="text-[12px] text-stone-400 mt-0.5">Live rates from platform · refreshed on load</p>
         </div>
         <span className="text-[11px] px-2.5 py-1 rounded-full bg-forest-100 border border-forest-200 text-forest-700 font-medium">
           Live estimate
@@ -72,10 +72,14 @@ export default function PriceCalculator() {
             <label className="block text-[11.5px] uppercase tracking-[0.12em] text-stone-500 font-semibold mb-2">Trek Route</label>
             <select
               value={trekId}
-              onChange={(e) => { setTrekId(e.target.value); const t = TREK_PRICES.find((x) => x.id === e.target.value); setDays(t.minDays); }}
+              onChange={(e) => {
+                setTrekId(e.target.value);
+                const t = trekPrices.find((x) => x.trekId === e.target.value);
+                if (t) setDays(t.minDays);
+              }}
               className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 text-[14px] text-stone-800 outline-none focus:border-forest-400 focus:ring-2 focus:ring-forest-100 appearance-none cursor-pointer"
             >
-              {TREK_PRICES.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+              {trekPrices.map((t) => <option key={t.trekId} value={t.trekId}>{t.name}</option>)}
             </select>
           </div>
 
@@ -103,7 +107,7 @@ export default function PriceCalculator() {
           <div>
             <label className="block text-[11.5px] uppercase tracking-[0.12em] text-stone-500 font-semibold mb-2">Guide Tier</label>
             <div className="space-y-2">
-              {GUIDE_TIERS.map((g) => (
+              {guideTiers.map((g) => (
                 <label key={g.id} className={`flex items-start gap-3 p-3 rounded-xl cursor-pointer border transition-all ${guideTier === g.id ? "bg-forest-50 border-forest-300" : "bg-stone-50 border-stone-200 hover:bg-stone-100"}`}>
                   <input type="radio" name="guideTier" value={g.id} checked={guideTier === g.id} onChange={() => setGuideTier(g.id)} className="hidden" />
                   <span className="w-3 h-3 mt-[3px] rounded-full shrink-0" style={{ background: guideTier === g.id ? g.color : "#D1D5DB" }} />
@@ -123,7 +127,7 @@ export default function PriceCalculator() {
           <div>
             <label className="block text-[11.5px] uppercase tracking-[0.12em] text-stone-500 font-semibold mb-2">Season</label>
             <div className="grid grid-cols-2 gap-2">
-              {SEASONS.map((s) => (
+              {seasons.map((s) => (
                 <label key={s.id} className={`p-3 rounded-xl cursor-pointer border text-center transition-all ${seasonId === s.id ? "bg-forest-50 border-forest-300 text-forest-700" : "bg-stone-50 border-stone-200 text-stone-600 hover:bg-stone-100"}`}>
                   <input type="radio" name="season" value={s.id} checked={seasonId === s.id} onChange={() => setSeasonId(s.id)} className="hidden" />
                   <div className="text-[12px] font-semibold leading-snug mb-0.5">{s.badge}</div>
@@ -136,7 +140,7 @@ export default function PriceCalculator() {
           {/* Porter + Group */}
           <div className="grid grid-cols-2 gap-4">
             {[
-              { label: "Porters", val: porterCount, set: setPorterCount, max: 5, note: `$${PORTER_RATE_PER_DAY.min}–${PORTER_RATE_PER_DAY.max}/day each` },
+              { label: "Porters", val: porterCount, set: setPorterCount, max: 5, note: `$${porterRatePerDay.min}–${porterRatePerDay.max}/day each` },
               { label: "Group size", val: group, set: setGroup, max: 20, note: "Splits total cost" },
             ].map(({ label, val, set, max, note }) => (
               <div key={label}>
@@ -160,14 +164,13 @@ export default function PriceCalculator() {
             </h4>
             <RowLine label="Trek base cost" value={fmtRange(calc.baseMin, calc.baseMax)} sub={`${season.badge} season ×${season.multiplier}`} />
             <RowLine label={`Guide · ${tier.label}`} value={fmtRange(calc.guideMin, calc.guideMax)} sub={`$${tier.ratePerDay.min}–${tier.ratePerDay.max}/day × ${validDays} days`} />
-            {porterCount > 0 && <RowLine label={`Porters ×${porterCount}`} value={fmtRange(calc.porterMin, calc.porterMax)} sub={`$${PORTER_RATE_PER_DAY.min}–${PORTER_RATE_PER_DAY.max}/day each`} />}
+            {porterCount > 0 && <RowLine label={`Porters ×${porterCount}`} value={fmtRange(calc.porterMin, calc.porterMax)} sub={`$${porterRatePerDay.min}–${porterRatePerDay.max}/day each`} />}
             <div className="mt-2 mb-1">
               <div className="text-[11px] uppercase tracking-[0.1em] text-stone-400 mb-1.5">Required Permits</div>
               {trek.permits.map((p) => <RowLine key={p.name} label={p.name} value={fmt(p.cost)} indent />)}
             </div>
-            <RowLine label={`Platform fee (${PLATFORM_FEE_PCT}%)`} value={fmtRange(calc.feeMin, calc.feeMax)} sub="Transparent · no hidden charges" />
+            <RowLine label={`Platform fee (${platformFeePct}%)`} value={fmtRange(calc.feeMin, calc.feeMax)} sub="Transparent · no hidden charges" />
 
-            {/* Total */}
             <div className="mt-4 p-4 rounded-xl bg-forest-50 border border-forest-200">
               <div className="flex items-center justify-between mb-1">
                 <span className="text-[13px] text-stone-600">Total estimate</span>
@@ -182,17 +185,18 @@ export default function PriceCalculator() {
             </div>
           </div>
 
-          {/* AI notice */}
-          <div className="p-4 rounded-xl bg-blue-50 border border-blue-200 flex gap-3 mb-4">
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className="text-blue-500 shrink-0 mt-0.5">
-              <circle cx="10" cy="10" r="8.5" stroke="currentColor" strokeWidth="1.4" />
-              <path d="M10 6v4M10 12.5v.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-            </svg>
-            <div>
-              <div className="text-[12px] font-semibold text-blue-700 mb-0.5">AI Pricing · Phase 3 (coming soon)</div>
-              <p className="text-[11.5px] text-blue-600 leading-relaxed">{AI_NOTICE}</p>
+          {aiNotice && (
+            <div className="p-4 rounded-xl bg-blue-50 border border-blue-200 flex gap-3 mb-4">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className="text-blue-500 shrink-0 mt-0.5">
+                <circle cx="10" cy="10" r="8.5" stroke="currentColor" strokeWidth="1.4" />
+                <path d="M10 6v4M10 12.5v.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+              </svg>
+              <div>
+                <div className="text-[12px] font-semibold text-blue-700 mb-0.5">AI Pricing · Phase 3 (coming soon)</div>
+                <p className="text-[11.5px] text-blue-600 leading-relaxed">{aiNotice}</p>
+              </div>
             </div>
-          </div>
+          )}
 
           <Link
             to="/register"

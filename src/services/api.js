@@ -67,10 +67,14 @@ const guideService = {
     return request(`/guides/${id}`);
   },
 
-  upsertMyProfile(profileData, token) {
+  getMyProfile() {
+    return request('/guides/me', { headers: authHeader() });
+  },
+
+  upsertMyProfile(profileData) {
     return request('/guides/me/profile', {
       method: 'PUT',
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { ...authHeader(), 'Content-Type': 'application/json' },
       body: JSON.stringify(profileData),
     });
   },
@@ -98,6 +102,59 @@ const adminService = {
   listTrekkers(search = '') {
     const qs = search ? `?search=${encodeURIComponent(search)}` : '';
     return request(`/users/admin/trekkers${qs}`, { headers: authHeader() });
+  },
+};
+
+export const treksService = {
+  getTreks(params = {}) {
+    const qs = new URLSearchParams(
+      Object.fromEntries(Object.entries(params).filter(([, v]) => v !== undefined && v !== '' && v !== null))
+    ).toString();
+    return request(`/treks${qs ? `?${qs}` : ''}`);
+  },
+  adminGetTreks() {
+    return request('/treks/admin/all', { headers: authHeader() });
+  },
+  createTrek(data) {
+    return request('/treks/admin', { method: 'POST', headers: authHeader(), body: JSON.stringify(data) });
+  },
+  updateTrek(id, data) {
+    return request(`/treks/admin/${id}`, { method: 'PUT', headers: authHeader(), body: JSON.stringify(data) });
+  },
+  deleteTrek(id) {
+    return request(`/treks/admin/${id}`, { method: 'DELETE', headers: authHeader() });
+  },
+};
+
+export const pricingService = {
+  getConfig() {
+    return request('/pricing/config');
+  },
+  adminUpdateTrekPrice(trekId, data) {
+    return request(`/pricing/treks/${encodeURIComponent(trekId)}`, {
+      method: 'PUT',
+      headers: authHeader(),
+      body: JSON.stringify(data),
+    });
+  },
+  adminUpdateConfig(data) {
+    return request('/pricing/config', {
+      method: 'PUT',
+      headers: authHeader(),
+      body: JSON.stringify(data),
+    });
+  },
+};
+
+export const conditionsService = {
+  getConditions(params = {}) {
+    const qs = new URLSearchParams(
+      Object.fromEntries(Object.entries(params).filter(([, v]) => v !== undefined && v !== '' && v !== null))
+    ).toString();
+    return request(`/conditions${qs ? `?${qs}` : ''}`);
+  },
+  getRegions() {
+    return request('/conditions/regions');
   },
 };
 

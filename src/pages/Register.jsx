@@ -3,22 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useGoogleLogin } from "@react-oauth/google";
 import authService from "../services/api";
 import AuthLayout from "../components/auth/AuthLayout";
-
-const SPECIALIZATIONS = [
-  "Swayambhunath (Monkey Temple)", "Boudhanath Stupa", "Pashupatinath Temple",
-  "Durbar Square (Kathmandu)", "Changunarayan Temple", "Phewa Lake", "Sarangkot",
-  "World Peace Pagoda", "Davis Falls", "Gupteshwor Cave", "Begnas Lake",
-  "Mahendra Cave", "Lukla", "Namche Bazaar", "Tengboche Monastery", "Kala Patthar",
-  "Gokyo Lakes", "Annapurna Circuit", "Ghorepani Poon Hill", "Mardi Himal",
-  "Jomsom", "Tatopani", "Manang", "Thorong La Pass", "Kyanjin Gompa",
-  "Helambu Valley", "Chitwan National Park", "Bardia National Park",
-  "Tharu Cultural Village", "Elephant Breeding Center", "Rara Lake",
-  "Rara National Park", "Khaptad National Park", "Dhorpatan Hunting Reserve",
-  "Api Himal Base Camp", "Saipal Himal Region", "Badimalika Temple",
-  "Muktinath Temple", "Janaki Temple (Janakpur)", "Pathivara Temple",
-  "Manakamana Temple", "Upper Mustang", "Lower Mustang", "Dolpo Region",
-  "Tilicho Lake", "Kanchenjunga Base Camp",
-];
+import { SPECIALIZATIONS } from "../data/locations";
 
 const INPUT_CLS = "w-full bg-stone-50 border border-stone-200 rounded-xl py-[13px] pl-11 pr-4 text-[15px] text-stone-800 outline-none transition-all placeholder:text-stone-400 focus:border-forest-400 focus:bg-white focus:ring-2 focus:ring-forest-100";
 const INPUT_SM  = "w-full bg-stone-50 border border-stone-200 rounded-xl py-[11px] pl-11 pr-4 text-[14px] text-stone-800 outline-none transition-all placeholder:text-stone-400 focus:border-forest-400 focus:bg-white focus:ring-2 focus:ring-forest-100";
@@ -414,7 +399,7 @@ export default function Register() {
                   <label htmlFor="specialization" className="flex items-center text-[12px] font-semibold text-stone-500 tracking-[0.12em] uppercase mb-2">Specialization <span className="text-red-500 ml-1">*</span></label>
                   <select id="specialization" name="specialization" value={form.specialization} onChange={handleChange} className={SELECT_CLS}>
                     <option value="">Route</option>
-                    {SPECIALIZATIONS.map((s) => <option key={s} value={s}>{s}</option>)}
+                    {SPECIALIZATIONS.map((s) => <option key={s.name} value={s.name}>{s.name}</option>)}
                   </select>
                   {errors.specialization && <span className={ERR_CLS}>{errors.specialization}</span>}
                 </div>
