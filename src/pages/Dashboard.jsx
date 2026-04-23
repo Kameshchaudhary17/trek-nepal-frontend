@@ -148,7 +148,7 @@ export default function Dashboard() {
           <span className="text-[12px] text-stone-400">{NAV.find((n) => n.id === activeTab)?.label}</span>
         </div>
 
-          <div className="px-6 sm:px-10 py-8">
+          <div className="px-8 sm:px-14 lg:px-20 py-10">
             {activeTab === "overview" && <OverviewTab user={user} setActiveTab={setActiveTab} />}
             {activeTab === "explore"  && <ExploreTab />}
             {activeTab === "bookings" && <BookingsTab />}
@@ -162,67 +162,67 @@ export default function Dashboard() {
 /* ── Overview Tab ───────────────────────────────────────────────── */
 function OverviewTab({ user, setActiveTab }) {
   const stats = [
-    { label: "Upcoming treks",  value: "0", sub: "Confirmed bookings" },
-    { label: "Saved guides",    value: "0", sub: "In your list" },
-    { label: "Treks completed", value: "0", sub: "All time" },
-    { label: "Reviews given",   value: "0", sub: "Guide reviews" },
+    { label: "Upcoming treks",  value: "0" },
+    { label: "Saved guides",    value: "0" },
+    { label: "Treks completed", value: "0" },
+    { label: "Reviews given",   value: "0" },
+  ];
+
+  const actions = [
+    { title: "Browse Treks",      desc: "12+ curated Nepal routes with difficulty and permits.", to: "/treks",      Icon: IconMountain },
+    { title: "Find a Guide",       desc: "NTB-verified guides by route, language and rate.",      to: "/guides",     Icon: IconCompass },
+    { title: "Calculate Cost",     desc: "Estimate your full trek budget.",                       to: "/pricing",    Icon: IconCoin },
+    { title: "Trail Conditions",   desc: "Live weather and trail status across Nepal.",           to: "/conditions", Icon: IconCloud },
+    { title: "My Bookings",        desc: "View upcoming and past bookings.",                      tab: "bookings",   Icon: IconClipboard },
+    { title: "Account Settings",   desc: "Update profile details.",                               tab: "account",    Icon: IconUser },
   ];
 
   return (
     <div>
-      <div className="mb-8">
-        <span className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-forest-500 font-semibold mb-2">
-          <span className="w-5 h-px bg-forest-300" /> Overview
-        </span>
-        <h1 className="font-serif text-[2rem] sm:text-[2.3rem] font-bold text-stone-900 leading-tight">
-          Welcome, <span className="text-forest-500">{user.fullName?.split(" ")[0]}</span>
+      <div className="mb-16">
+        <h1 className="text-[2.5rem] font-medium text-stone-900 leading-tight tracking-tight">
+          Welcome, {user.fullName?.split(" ")[0]}
         </h1>
-        <p className="text-[14px] text-stone-500 mt-1.5">Plan your next Nepal adventure.</p>
+        <p className="text-[16px] text-stone-500 mt-2">Plan your next Nepal adventure.</p>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-4 border-y border-stone-100 divide-x divide-stone-100 mb-20">
         {stats.map((s) => (
-          <div key={s.label} className="bg-white border border-stone-200 rounded-2xl p-5 hover:border-stone-300 hover:shadow-sm transition-all">
-            <div className="font-serif text-[1.8rem] font-bold text-forest-500 mb-1">{s.value}</div>
-            <div className="text-[13px] font-medium text-stone-700">{s.label}</div>
-            <div className="text-[11.5px] text-stone-400">{s.sub}</div>
+          <div key={s.label} className="py-8 px-6 first:pl-0">
+            <div className="text-[2.5rem] font-medium text-stone-900 tabular-nums leading-none">{s.value}</div>
+            <div className="text-[13px] text-stone-500 mt-3">{s.label}</div>
           </div>
         ))}
       </div>
 
       {/* Quick actions */}
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-8">
-        {[
-          { icon: "⛰️", title: "Browse Treks",      desc: "Explore 12+ curated Nepal routes with difficulty ratings, permits and season guides.", to: "/treks",      cta: "Explore routes" },
-          { icon: "🧗", title: "Find a Guide",       desc: "Browse NTB-verified guides filtered by route, language, experience and daily rate.",  to: "/guides",     cta: "Browse guides" },
-          { icon: "💰", title: "Calculate Cost",     desc: "Use the price calculator to estimate your full trek budget — guide, permits, season.", to: "/pricing",    cta: "Calculate now" },
-          { icon: "🌤️", title: "Trail Conditions",  desc: "Check live weather and trail status across 40+ Nepal locations before you book.",     to: "/conditions", cta: "Check now" },
-          { icon: "📋", title: "My Bookings",        desc: "View and manage your upcoming and past trek bookings.",                                tab: "bookings",   cta: "View bookings" },
-          { icon: "👤", title: "Account Settings",   desc: "Update your profile details, email and preferences.",                                 tab: "account",    cta: "Edit account" },
-        ].map(({ icon, title, desc, to, tab, cta }) => (
-          to ? (
-            <Link key={title} to={to} className="flex flex-col bg-white border border-stone-200 rounded-2xl p-5 hover:border-stone-300 hover:shadow-md transition-all hover:-translate-y-0.5 group">
-              <div className="w-10 h-10 rounded-xl bg-forest-100 border border-forest-200 flex items-center justify-center text-xl mb-4">{icon}</div>
-              <h3 className="font-serif text-[1rem] font-semibold text-stone-900 mb-1.5">{title}</h3>
-              <p className="text-[13px] text-stone-500 leading-relaxed mb-4 flex-1">{desc}</p>
-              <span className="text-[13px] text-forest-600 group-hover:text-forest-700 font-medium flex items-center gap-1 transition-colors">
-                {cta}
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6h8M6 2l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+      <div className="grid sm:grid-cols-2 gap-x-14 gap-y-0">
+        {actions.map(({ title, desc, to, tab, Icon }) => {
+          const content = (
+            <>
+              <span className="shrink-0 mt-1 text-stone-400 group-hover:text-forest-600 transition-colors">
+                <Icon />
               </span>
+              <div className="flex-1">
+                <h3 className="text-[16px] font-medium text-stone-900 group-hover:text-forest-600 transition-colors">{title}</h3>
+                <p className="text-[13.5px] text-stone-500 mt-1">{desc}</p>
+              </div>
+              <svg width="16" height="16" viewBox="0 0 12 12" fill="none" className="text-stone-300 group-hover:text-forest-600 transition-colors shrink-0 mt-1.5">
+                <path d="M2 6h8M6 2l4 4-4 4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </>
+          );
+          return to ? (
+            <Link key={title} to={to} className="group flex items-start gap-5 py-6 border-b border-stone-100">
+              {content}
             </Link>
           ) : (
-            <button key={title} onClick={() => setActiveTab(tab)} className="flex flex-col bg-white border border-stone-200 rounded-2xl p-5 hover:border-stone-300 hover:shadow-md transition-all hover:-translate-y-0.5 group text-left">
-              <div className="w-10 h-10 rounded-xl bg-stone-100 border border-stone-200 flex items-center justify-center text-xl mb-4">{icon}</div>
-              <h3 className="font-serif text-[1rem] font-semibold text-stone-900 mb-1.5">{title}</h3>
-              <p className="text-[13px] text-stone-500 leading-relaxed mb-4 flex-1">{desc}</p>
-              <span className="text-[13px] text-forest-600 group-hover:text-forest-700 font-medium flex items-center gap-1 transition-colors">
-                {cta}
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6h8M6 2l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
-              </span>
+            <button key={title} onClick={() => setActiveTab(tab)} className="group flex items-start gap-5 py-6 text-left border-b border-stone-100">
+              {content}
             </button>
-          )
-        ))}
+          );
+        })}
       </div>
     </div>
   );
@@ -231,52 +231,51 @@ function OverviewTab({ user, setActiveTab }) {
 /* ── Explore Tab ────────────────────────────────────────────────── */
 function ExploreTab() {
   const links = [
-    { icon: "⛰️", label: "Trek Routes",    sub: "12 curated routes",            to: "/treks",      color: "bg-blue-50 border-blue-200 text-blue-700" },
-    { icon: "🧗", label: "Verified Guides", sub: "NTB-certified professionals",  to: "/guides",     color: "bg-forest-50 border-forest-200 text-forest-700" },
-    { icon: "💰", label: "Pricing",         sub: "Transparent cost breakdown",   to: "/pricing",    color: "bg-amber-50 border-amber-200 text-amber-700" },
-    { icon: "🌤️", label: "Trail Conditions", sub: "Live weather & status",       to: "/conditions", color: "bg-sky-50 border-sky-200 text-sky-700" },
+    { label: "Trek Routes",     sub: "12 curated routes",            to: "/treks",      Icon: IconMountain },
+    { label: "Verified Guides", sub: "NTB-certified professionals",  to: "/guides",     Icon: IconCompass },
+    { label: "Pricing",         sub: "Transparent cost breakdown",   to: "/pricing",    Icon: IconCoin },
+    { label: "Trail Conditions",sub: "Live weather and trail status",to: "/conditions", Icon: IconCloud },
+  ];
+
+  const seasons = [
+    { season: "Spring",  months: "Mar–May", note: "High season" },
+    { season: "Monsoon", months: "Jun–Aug", note: "Avoid if possible" },
+    { season: "Autumn",  months: "Sep–Nov", note: "Peak season" },
+    { season: "Winter",  months: "Dec–Feb", note: "Low season" },
   ];
 
   return (
     <div>
-      <div className="mb-7">
-        <span className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-forest-500 font-semibold mb-2">
-          <span className="w-5 h-px bg-forest-300" /> Explore
-        </span>
-        <h2 className="font-serif text-[1.7rem] font-bold text-stone-900">Plan Your Trek</h2>
-        <p className="text-[13.5px] text-stone-400 mt-1">Everything you need to plan the perfect Nepal trekking experience.</p>
+      <div className="mb-16">
+        <h2 className="text-[2.5rem] font-medium text-stone-900 leading-tight tracking-tight">Plan your trek</h2>
+        <p className="text-[16px] text-stone-500 mt-2">Everything to plan your Nepal trekking experience.</p>
       </div>
 
-      <div className="grid sm:grid-cols-2 gap-5">
-        {links.map(({ icon, label, sub, to, color }) => (
-          <Link key={to} to={to} className="flex items-center gap-5 bg-white border border-stone-200 rounded-2xl p-6 hover:border-stone-300 hover:shadow-md transition-all hover:-translate-y-0.5 group">
-            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-2xl border ${color} shrink-0`}>
-              {icon}
-            </div>
+      <div className="grid sm:grid-cols-2 gap-x-14 gap-y-0 mb-20">
+        {links.map(({ label, sub, to, Icon }) => (
+          <Link key={to} to={to} className="group flex items-start gap-5 py-6 border-b border-stone-100">
+            <span className="shrink-0 mt-1 text-stone-400 group-hover:text-forest-600 transition-colors">
+              <Icon />
+            </span>
             <div className="flex-1 min-w-0">
-              <div className="font-serif text-[1.05rem] font-semibold text-stone-900 mb-0.5">{label}</div>
-              <div className="text-[12.5px] text-stone-400">{sub}</div>
+              <div className="text-[16px] font-medium text-stone-900 group-hover:text-forest-600 transition-colors">{label}</div>
+              <div className="text-[13.5px] text-stone-500 mt-1">{sub}</div>
             </div>
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-stone-300 group-hover:text-stone-500 transition-colors shrink-0">
-              <path d="M2 7h10M7 2l5 5-5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+            <svg width="16" height="16" viewBox="0 0 12 12" fill="none" className="text-stone-300 group-hover:text-forest-600 transition-colors shrink-0 mt-1.5">
+              <path d="M2 6h8M6 2l4 4-4 4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </Link>
         ))}
       </div>
 
-      <div className="mt-6 p-5 bg-forest-50 border border-forest-200 rounded-2xl">
-        <h3 className="font-serif text-[1rem] font-semibold text-forest-900 mb-1.5">Best time to trek</h3>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3">
-          {[
-            { season: "Spring", months: "Mar–May", badge: "High season", color: "bg-green-100 text-green-700" },
-            { season: "Monsoon", months: "Jun–Aug", badge: "Avoid if possible", color: "bg-blue-100 text-blue-700" },
-            { season: "Autumn", months: "Sep–Nov", badge: "Peak season", color: "bg-amber-100 text-amber-700" },
-            { season: "Winter", months: "Dec–Feb", badge: "Low season", color: "bg-sky-100 text-sky-700" },
-          ].map((s) => (
-            <div key={s.season} className="bg-white border border-forest-100 rounded-xl p-3">
-              <div className="font-semibold text-[13px] text-stone-800 mb-0.5">{s.season}</div>
-              <div className="text-[11.5px] text-stone-500 mb-1.5">{s.months}</div>
-              <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${s.color}`}>{s.badge}</span>
+      <div>
+        <h3 className="text-[13px] uppercase tracking-[0.14em] text-stone-400 mb-5">Best time to trek</h3>
+        <div className="grid grid-cols-2 sm:grid-cols-4 border-y border-stone-100 divide-x divide-stone-100">
+          {seasons.map((s) => (
+            <div key={s.season} className="py-7 px-6 first:pl-0">
+              <div className="text-[17px] font-medium text-stone-900">{s.season}</div>
+              <div className="text-[13.5px] text-stone-500 mt-1 tabular-nums">{s.months}</div>
+              <div className="text-[12.5px] text-stone-400 mt-1.5">{s.note}</div>
             </div>
           ))}
         </div>
@@ -323,11 +322,9 @@ function DashBookingsTab() {
 
   return (
     <div>
-      <div className="mb-7">
-        <span className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-forest-500 font-semibold mb-2">
-          <span className="w-5 h-px bg-forest-300" /> Bookings
-        </span>
-        <h2 className="font-serif text-[1.7rem] font-bold text-stone-900">My Bookings</h2>
+      <div className="mb-16">
+        <h2 className="text-[2.5rem] font-medium text-stone-900 leading-tight tracking-tight">My bookings</h2>
+        <p className="text-[16px] text-stone-500 mt-2">Upcoming and past trek bookings.</p>
       </div>
 
       {loading ? (
@@ -490,13 +487,15 @@ function AccountTab({ user, setUser }) {
 
   const initials = user.fullName?.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase() || "?";
 
+  const inputCls = "w-full bg-white border-b border-stone-200 py-2.5 text-[14px] text-stone-900 outline-none transition-colors placeholder:text-stone-400 focus:border-forest-600";
+
   return (
     <div className="max-w-[680px]">
       {toast && (
-        <div className={`fixed bottom-6 right-6 z-[100] flex items-center gap-2.5 px-4 py-3 rounded-xl text-[13.5px] font-semibold shadow-lg border ${
-          toast.type === "error" ? "bg-red-50 border-red-200 text-red-700" : "bg-forest-50 border-forest-200 text-forest-700"
+        <div className={`fixed bottom-6 right-6 z-[100] px-4 py-2.5 rounded-lg text-[13px] border ${
+          toast.type === "error" ? "bg-white border-red-200 text-red-600" : "bg-white border-forest-200 text-forest-700"
         }`}>
-          {toast.type === "error" ? "✕" : "✓"} {toast.msg}
+          {toast.msg}
         </div>
       )}
 
@@ -627,7 +626,7 @@ function AccountTab({ user, setUser }) {
             className="px-7 py-2.5 bg-forest-500 text-white rounded-xl text-[14px] font-semibold hover:bg-forest-600 transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2"
           >
             {saving
-              ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Saving…</>
+              ? <><span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />Saving</>
               : "Save changes"
             }
           </button>
@@ -672,6 +671,63 @@ function AccountIcon({ active }) {
     <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
       <circle cx="8" cy="5.5" r="2.5" stroke={active ? "#2D6A4F" : "currentColor"} strokeWidth="1.3" />
       <path d="M2.5 14c0-3.038 2.462-5.5 5.5-5.5s5.5 2.462 5.5 5.5" stroke={active ? "#2D6A4F" : "currentColor"} strokeWidth="1.3" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+/* ── Action icons (minimal line) ────────────────────────────────── */
+const ICON_PROPS = { width: 18, height: 18, viewBox: "0 0 20 20", fill: "none", stroke: "currentColor", strokeWidth: 1.3, strokeLinecap: "round", strokeLinejoin: "round" };
+
+function IconMountain() {
+  return (
+    <svg {...ICON_PROPS}>
+      <path d="M2 16l5-9 3.5 6 2-3.5L17 16H2z" />
+      <path d="M6.5 10.5l1.2-2" opacity=".6" />
+    </svg>
+  );
+}
+
+function IconCompass() {
+  return (
+    <svg {...ICON_PROPS}>
+      <circle cx="10" cy="10" r="7.5" />
+      <path d="M12.5 7.5l-1.5 4-4 1.5 1.5-4 4-1.5z" />
+    </svg>
+  );
+}
+
+function IconCoin() {
+  return (
+    <svg {...ICON_PROPS}>
+      <circle cx="10" cy="10" r="7.5" />
+      <path d="M10 6v8M12.5 7.5H8.8a1.3 1.3 0 000 2.6h2.4a1.3 1.3 0 010 2.6H7.5" />
+    </svg>
+  );
+}
+
+function IconCloud() {
+  return (
+    <svg {...ICON_PROPS}>
+      <path d="M6 14.5h8.5a3 3 0 00.3-5.97A4.5 4.5 0 006 9a3.25 3.25 0 000 5.5z" />
+    </svg>
+  );
+}
+
+function IconClipboard() {
+  return (
+    <svg {...ICON_PROPS}>
+      <rect x="5" y="4" width="10" height="13" rx="1.5" />
+      <path d="M8 3h4v3H8z" />
+      <path d="M7.5 10h5M7.5 13h3" opacity=".6" />
+    </svg>
+  );
+}
+
+function IconUser() {
+  return (
+    <svg {...ICON_PROPS}>
+      <circle cx="10" cy="7" r="3" />
+      <path d="M3.5 17a6.5 6.5 0 0113 0" />
     </svg>
   );
 }

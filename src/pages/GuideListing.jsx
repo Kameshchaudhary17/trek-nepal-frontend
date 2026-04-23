@@ -98,60 +98,40 @@ export default function GuideListing() {
   }
 
   return (
-    <div className="min-h-screen bg-stone-50 font-sans text-stone-900">
+    <div className="min-h-screen bg-white font-sans text-stone-900">
       <Navbar />
 
       {/* ── Page header ── */}
-      <div className="pt-[66px] bg-white border-b border-stone-200">
-        <div className="max-w-[1200px] mx-auto px-5 sm:px-8 py-10 sm:py-12">
-          <span className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.22em] text-forest-500 font-semibold mb-3">
-            <span className="w-5 h-px bg-forest-300" />
-            Verified Guides
-          </span>
-          <h1 className="font-serif text-[2.2rem] sm:text-[2.8rem] font-bold text-stone-900 leading-tight mb-3">
-            {trekFilter
-              ? <><span className="italic text-forest-500">{trekFilter}</span> Guides</>
-              : <>Find Your Perfect <span className="italic text-forest-500">Himalayan Guide</span></>
-            }
+      <div className="pt-[66px] border-b border-stone-100">
+        <div className="max-w-[1200px] mx-auto px-5 sm:px-8 py-12 sm:py-16">
+          <h1 className="text-[2.5rem] sm:text-[3rem] font-medium text-stone-900 leading-tight tracking-tight mb-3">
+            {trekFilter ? `${trekFilter} guides` : "Verified Himalayan guides"}
           </h1>
-          <p className="text-[15px] text-stone-500 max-w-[520px] leading-relaxed mb-6">
+          <p className="text-[15px] text-stone-500 max-w-[560px] leading-relaxed mb-6">
             {trekFilter
-              ? `Nepal Tourism Board–verified guides who specialise in ${trekFilter}. Book directly with no agency fees.`
-              : `${total > 0 ? `Browse ${total} ` : "Browse "}Nepal Tourism Board–verified guides. Filter by route, language, and budget — book directly with no agency fees.`
+              ? `Nepal Tourism Board–verified guides who specialise in ${trekFilter}. Book directly, no agency fees.`
+              : `${total > 0 ? `Browse ${total} ` : "Browse "}NTB-verified guides. Filter by route, language, and budget — book directly, no agency fees.`
             }
           </p>
-          <div className="flex flex-wrap gap-2 text-[13px]">
-            {[
-              { icon: "✓", text: "NTB verified" },
-              { icon: "★", text: "Avg. 4.8 rating" },
-              { icon: "⛰", text: "80+ routes covered" },
-            ].map((s) => (
-              <span key={s.text} className="flex items-center gap-1.5 px-3 py-1.5 bg-forest-50 border border-forest-200 text-forest-700 rounded-full text-[12px] font-medium">
-                <span className="text-forest-500">{s.icon}</span>
-                {s.text}
-              </span>
-            ))}
+          <div className="flex flex-wrap gap-6 text-[13px] text-stone-600">
+            <span className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-forest-500" /> NTB verified</span>
+            <span className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-forest-500" /> Avg. 4.8 rating</span>
+            <span className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-forest-500" /> 80+ routes covered</span>
           </div>
         </div>
       </div>
 
       {/* ── Trek filter banner ── */}
       {trekFilter && (
-        <div className="bg-forest-50 border-b border-forest-200">
+        <div className="border-b border-stone-100">
           <div className="max-w-[1200px] mx-auto px-5 sm:px-8 py-3 flex items-center gap-3">
-            <svg width="15" height="15" viewBox="0 0 16 16" fill="none" className="text-forest-500 shrink-0">
-              <path d="M8 1L10 6H15L11 9.5L12.5 14.5L8 11.5L3.5 14.5L5 9.5L1 6H6L8 1Z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
-            </svg>
-            <span className="text-[13px] text-forest-800 font-medium">
-              Showing guides for <span className="font-semibold">{trekFilter}</span>
+            <span className="text-[13px] text-stone-600">
+              Filtering for <span className="text-stone-900 font-medium">{trekFilter}</span>
             </span>
             <button
               onClick={() => { setTrekFilter(""); setRegion("All Regions"); }}
-              className="ml-auto flex items-center gap-1.5 text-[12px] text-forest-600 hover:text-forest-800 font-medium transition-colors"
+              className="ml-auto text-[12.5px] text-forest-600 hover:text-forest-700 font-medium transition-colors"
             >
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                <path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-              </svg>
               Show all guides
             </button>
           </div>
@@ -159,11 +139,11 @@ export default function GuideListing() {
       )}
 
       {/* ── Filter bar ── */}
-      <div className="sticky top-[66px] z-40 bg-white border-b border-stone-200 shadow-sm">
-        <div className="max-w-[1200px] mx-auto px-5 sm:px-8 py-3 flex flex-wrap gap-2 items-center">
+      <div className="sticky top-[66px] z-40 bg-white border-b border-stone-100">
+        <div className="max-w-[1200px] mx-auto px-5 sm:px-8 py-3 flex flex-wrap gap-3 items-center">
           {/* Search */}
-          <div className="flex items-center gap-2 bg-stone-50 border border-stone-200 rounded-xl px-3 py-[7px] flex-1 min-w-[180px] max-w-[260px] focus-within:border-forest-300 focus-within:ring-2 focus-within:ring-forest-100 transition-all">
-            <svg width="15" height="15" viewBox="0 0 15 15" fill="none" className="text-stone-400 shrink-0">
+          <div className="flex items-center gap-2 border-b border-stone-200 px-1 py-1.5 flex-1 min-w-[180px] max-w-[260px] focus-within:border-forest-600 transition-colors">
+            <svg width="13" height="13" viewBox="0 0 15 15" fill="none" className="text-stone-400 shrink-0">
               <circle cx="6.5" cy="6.5" r="5" stroke="currentColor" strokeWidth="1.4" />
               <path d="M11 11l2.5 2.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
             </svg>
@@ -176,50 +156,31 @@ export default function GuideListing() {
             />
           </div>
 
-          {/* Region */}
-          <select
-            value={region}
-            onChange={(e) => setRegion(e.target.value)}
-            className="bg-stone-50 border border-stone-200 rounded-xl px-3 py-[7px] text-[13px] text-stone-700 outline-none cursor-pointer hover:border-stone-300 transition-colors"
-          >
+          <select value={region} onChange={(e) => setRegion(e.target.value)}
+            className="bg-white border-b border-stone-200 px-1 py-1.5 text-[13px] text-stone-700 outline-none cursor-pointer hover:border-stone-400 transition-colors">
             {REGIONS.map((r) => <option key={r} value={r}>{r}</option>)}
           </select>
 
-          {/* Language */}
-          <select
-            value={language}
-            onChange={(e) => setLanguage(e.target.value)}
-            className="bg-stone-50 border border-stone-200 rounded-xl px-3 py-[7px] text-[13px] text-stone-700 outline-none cursor-pointer hover:border-stone-300 transition-colors"
-          >
+          <select value={language} onChange={(e) => setLanguage(e.target.value)}
+            className="bg-white border-b border-stone-200 px-1 py-1.5 text-[13px] text-stone-700 outline-none cursor-pointer hover:border-stone-400 transition-colors">
             {LANGUAGES.map((l) => <option key={l} value={l}>{l}</option>)}
           </select>
 
-          {/* Min rating */}
-          <select
-            value={minRating}
-            onChange={(e) => setMinRating(Number(e.target.value))}
-            className="bg-stone-50 border border-stone-200 rounded-xl px-3 py-[7px] text-[13px] text-stone-700 outline-none cursor-pointer hover:border-stone-300 transition-colors"
-          >
+          <select value={minRating} onChange={(e) => setMinRating(Number(e.target.value))}
+            className="bg-white border-b border-stone-200 px-1 py-1.5 text-[13px] text-stone-700 outline-none cursor-pointer hover:border-stone-400 transition-colors">
             <option value={0}>Any rating</option>
             <option value={4.5}>4.5★ & up</option>
             <option value={4.8}>4.8★ & up</option>
           </select>
 
-          {/* Sort + clear */}
-          <div className="flex items-center gap-2 ml-auto">
+          <div className="flex items-center gap-3 ml-auto">
             {(activeFilterCount > 0 || search) && (
-              <button
-                onClick={clearFilters}
-                className="text-[12px] text-stone-500 hover:text-terra-500 transition-colors px-2 py-1 font-medium"
-              >
+              <button onClick={clearFilters} className="text-[12.5px] text-stone-500 hover:text-stone-900 transition-colors">
                 Clear {activeFilterCount > 0 ? `${activeFilterCount} filter${activeFilterCount > 1 ? "s" : ""}` : "search"}
               </button>
             )}
-            <select
-              value={sort}
-              onChange={(e) => setSort(e.target.value)}
-              className="bg-stone-50 border border-stone-200 rounded-xl px-3 py-[7px] text-[13px] text-stone-700 outline-none cursor-pointer hover:border-stone-300 transition-colors"
-            >
+            <select value={sort} onChange={(e) => setSort(e.target.value)}
+              className="bg-white border-b border-stone-200 px-1 py-1.5 text-[13px] text-stone-700 outline-none cursor-pointer hover:border-stone-400 transition-colors">
               {SORT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
           </div>
@@ -245,7 +206,7 @@ export default function GuideListing() {
       </div>
 
       {/* ── Footer note ── */}
-      <div className="border-t border-stone-200 bg-white py-6 text-center text-[13px] text-stone-400">
+      <div className="border-t border-stone-100 py-6 text-center text-[12.5px] text-stone-400">
         All listed guides hold a valid Nepal Tourism Board license · Prices in USD per day
       </div>
     </div>
