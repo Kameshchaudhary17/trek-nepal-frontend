@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useLocation } from "react-router-dom";
 import Navbar from "../components/ui/Navbar";
 import GuideList from "../components/guides/GuideList";
 import { guideService } from "../services/api";
@@ -25,9 +26,15 @@ function normalizeGuide(g) {
 }
 
 export default function GuideListing() {
+  const { search: locationSearch } = useLocation();
+
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [region, setRegion] = useState("All Regions");
+  const [trekFilter, setTrekFilter] = useState(() => new URLSearchParams(locationSearch).get("trek") || "");
+  const [region, setRegion] = useState(() => {
+    const p = new URLSearchParams(locationSearch);
+    return p.get("region") || "All Regions";
+  });
   const [language, setLanguage] = useState("Any Language");
   const [minRating, setMinRating] = useState(0);
   const [sort, setSort] = useState("rating");
@@ -51,6 +58,7 @@ export default function GuideListing() {
       setError(null);
       try {
         const params = {
+          ...(trekFilter && { trek: trekFilter }),
           ...(debouncedSearch && { search: debouncedSearch }),
           ...(region !== "All Regions" && { region }),
           ...(language !== "Any Language" && { language }),
@@ -71,15 +79,17 @@ export default function GuideListing() {
     }
     fetchGuides();
     return () => { cancelled = true; };
-  }, [debouncedSearch, region, language, minRating, sort]);
+  }, [trekFilter, debouncedSearch, region, language, minRating, sort]);
 
   const activeFilterCount = [
+    !!trekFilter,
     region !== "All Regions",
     language !== "Any Language",
     minRating > 0,
   ].filter(Boolean).length;
 
   function clearFilters() {
+    setTrekFilter("");
     setRegion("All Regions");
     setLanguage("Any Language");
     setMinRating(0);
@@ -99,11 +109,16 @@ export default function GuideListing() {
             Verified Guides
           </span>
           <h1 className="font-serif text-[2.2rem] sm:text-[2.8rem] font-bold text-stone-900 leading-tight mb-3">
-            Find Your Perfect <span className="italic text-forest-500">Himalayan Guide</span>
+            {trekFilter
+              ? <><span className="italic text-forest-500">{trekFilter}</span> Guides</>
+              : <>Find Your Perfect <span className="italic text-forest-500">Himalayan Guide</span></>
+            }
           </h1>
           <p className="text-[15px] text-stone-500 max-w-[520px] leading-relaxed mb-6">
-            {total > 0 ? `Browse ${total} ` : "Browse "}
-            Nepal Tourism Board–verified guides. Filter by route, language, and budget — book directly with no agency fees.
+            {trekFilter
+              ? `Nepal Tourism Board–verified guides who specialise in ${trekFilter}. Book directly with no agency fees.`
+              : `${total > 0 ? `Browse ${total} ` : "Browse "}Nepal Tourism Board–verified guides. Filter by route, language, and budget — book directly with no agency fees.`
+            }
           </p>
           <div className="flex flex-wrap gap-2 text-[13px]">
             {[
@@ -119,6 +134,29 @@ export default function GuideListing() {
           </div>
         </div>
       </div>
+
+      {/* ── Trek filter banner ── */}
+      {trekFilter && (
+        <div className="bg-forest-50 border-b border-forest-200">
+          <div className="max-w-[1200px] mx-auto px-5 sm:px-8 py-3 flex items-center gap-3">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none" className="text-forest-500 shrink-0">
+              <path d="M8 1L10 6H15L11 9.5L12.5 14.5L8 11.5L3.5 14.5L5 9.5L1 6H6L8 1Z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
+            </svg>
+            <span className="text-[13px] text-forest-800 font-medium">
+              Showing guides for <span className="font-semibold">{trekFilter}</span>
+            </span>
+            <button
+              onClick={() => { setTrekFilter(""); setRegion("All Regions"); }}
+              className="ml-auto flex items-center gap-1.5 text-[12px] text-forest-600 hover:text-forest-800 font-medium transition-colors"
+            >
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                <path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              </svg>
+              Show all guides
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── Filter bar ── */}
       <div className="sticky top-[66px] z-40 bg-white border-b border-stone-200 shadow-sm">

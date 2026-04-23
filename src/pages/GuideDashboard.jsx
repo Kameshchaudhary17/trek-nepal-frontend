@@ -1,7 +1,9 @@
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import Navbar from "../components/ui/Navbar";
-import { guideService, pricingService } from "../services/api";
+import DashboardHeader from "../components/ui/DashboardHeader";
+import SidebarAvatarMenu from "../components/ui/SidebarAvatarMenu";
+import ImageUpload from "../components/ui/ImageUpload";
+import authService, { guideService, pricingService } from "../services/api";
 
 /* ── Sidebar nav items ───────────────────────────────────────────── */
 const NAV = [
@@ -63,13 +65,19 @@ export default function GuideDashboard() {
       setGuide(g);
       setPricing(pricingRes);
 
+      // Read profilePhoto from localStorage to avoid stale closure on user state
+      const storedUser = (() => { try { return JSON.parse(localStorage.getItem("user")); } catch { return null; } })();
+
       setProfileForm({
-        specialty:  g?.specialty  || "",
-        region:     g?.region     || "Other",
-        experience: g?.experience || 0,
-        bio:        g?.bio        || "",
-        languages:  g?.languages  || ["English", "Nepali"],
-        routes:     g?.routes     || [],
+        fullName:     g?.user?.fullName     || storedUser?.fullName     || "",
+        phone:        g?.user?.phone        || storedUser?.phone        || "",
+        profilePhoto: g?.user?.profilePhoto || storedUser?.profilePhoto || "",
+        specialty:    g?.specialty    || "",
+        region:       g?.region       || "Other",
+        experience:   g?.experience   || 0,
+        bio:          g?.bio          || "",
+        languages:    g?.languages    || ["English", "Nepali"],
+        routes:       g?.routes       || [],
       });
 
       if (g?.ratePerDay && pricingRes?.guideTiers) {
@@ -108,10 +116,29 @@ export default function GuideDashboard() {
   }
 
   async function saveProfile() {
+    if (!profileForm.fullName?.trim()) {
+      showToast("Full name is required.", "error");
+      return;
+    }
     setProfileSaving(true);
     try {
-      const res = await guideService.upsertMyProfile(profileForm);
-      setGuide(res.guide);
+      const [userRes, guideRes] = await Promise.all([
+        authService.updateMe({
+          fullName:     profileForm.fullName.trim(),
+          phone:        profileForm.phone,
+          profilePhoto: profileForm.profilePhoto,
+        }),
+        guideService.upsertMyProfile(profileForm),
+      ]);
+      setGuide(guideRes.guide);
+      // sync user fields to localStorage so sidebar/header update immediately
+      const stored = localStorage.getItem("user");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        const merged = { ...parsed, ...userRes.user };
+        localStorage.setItem("user", JSON.stringify(merged));
+        setUser(merged);
+      }
       showToast("Profile saved successfully.");
     } catch {
       showToast("Failed to save profile.", "error");
@@ -149,7 +176,7 @@ export default function GuideDashboard() {
 
   return (
     <div className="min-h-screen bg-stone-50 font-sans">
-      <Navbar />
+      <DashboardHeader title="Guide Dashboard" />
 
       {/* Toast */}
       {toast && (
@@ -170,16 +197,26 @@ export default function GuideDashboard() {
         )}
         <aside className={`fixed top-[68px] left-0 h-[calc(100vh-68px)] w-[240px] bg-white border-r border-stone-200 flex flex-col z-50 transition-transform duration-200 md:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}>
           {/* Guide info */}
-          <div className="px-5 pt-6 pb-5 border-b border-stone-100">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center font-serif font-bold text-[0.9rem] text-white bg-forest-500 shrink-0">
-                {initials}
-              </div>
-              <div className="min-w-0">
-                <div className="text-[13px] font-semibold text-stone-900 truncate">{user.fullName}</div>
-                <div className="text-[11px] text-stone-400 truncate">{user.email}</div>
-              </div>
-            </div>
+          <div className="px-5 pt-5 pb-4 border-b border-stone-100">
+            <SidebarAvatarMenu
+              photo={user.profilePhoto}
+              initials={initials}
+              name={user.fullName}
+              email={user.email}
+              viewProfileTo={guide?._id ? `/guides/${guide._id}` : undefined}
+              onPhotoChange={async (url) => {
+                try {
+                  const res = await authService.updateMe({ profilePhoto: url });
+                  const stored = localStorage.getItem("user");
+                  if (stored) {
+                    const merged = { ...JSON.parse(stored), ...res.user };
+                    localStorage.setItem("user", JSON.stringify(merged));
+                    setUser(merged);
+                  }
+                  if (profileForm) updateForm("profilePhoto", url);
+                } catch {}
+              }}
+            />
             {/* Verification badge */}
             {isVerified ? (
               <span className="inline-flex items-center gap-1.5 text-[11px] px-2.5 py-1 rounded-full bg-forest-50 border border-forest-200 text-forest-700 font-semibold">
@@ -245,7 +282,7 @@ export default function GuideDashboard() {
 
           <div className="px-6 sm:px-10 py-8">
             {activeTab === "overview"  && <OverviewTab user={user} guide={guide} setActiveTab={setActiveTab} />}
-            {activeTab === "profile"   && profileForm && <ProfileTab form={profileForm} updateForm={updateForm} toggleLanguage={toggleLanguage} onSave={saveProfile} saving={profileSaving} />}
+            {activeTab === "profile"   && profileForm && <ProfileTab form={profileForm} updateForm={updateForm} toggleLanguage={toggleLanguage} onSave={saveProfile} saving={profileSaving} hasNationalId={!!guide?.nationalIdPublicId} userEmail={user.email} />}
             {activeTab === "rate"      && pricing && <RateTab guide={guide} pricing={pricing} selectedTier={selectedTier} setSelectedTier={setSelectedTier} rateInput={rateInput} setRateInput={setRateInput} onSave={saveRate} saving={rateSaving} />}
             {activeTab === "bookings"  && <BookingsTab />}
           </div>
@@ -357,7 +394,7 @@ function OverviewTab({ user, guide, setActiveTab }) {
 }
 
 /* ── Profile Tab ────────────────────────────────────────────────── */
-function ProfileTab({ form, updateForm, toggleLanguage, onSave, saving }) {
+function ProfileTab({ form, updateForm, toggleLanguage, onSave, saving, hasNationalId, userEmail }) {
   const [routeInput, setRouteInput] = useState("");
 
   function addRoute(e) {
@@ -382,6 +419,53 @@ function ProfileTab({ form, updateForm, toggleLanguage, onSave, saving }) {
       </div>
 
       <div className="space-y-5">
+        {/* ── Personal details ── */}
+        <div className="bg-stone-50 border border-stone-200 rounded-2xl p-5 space-y-4">
+          <p className="text-[11px] uppercase tracking-[0.18em] text-stone-400 font-semibold">Personal Details</p>
+
+          <Field label="Full Name">
+            <input
+              type="text"
+              value={form.fullName}
+              onChange={(e) => updateForm("fullName", e.target.value)}
+              placeholder="Your full name"
+              className={inputCls}
+            />
+          </Field>
+
+          <Field label="Email">
+            <input
+              type="email"
+              value={userEmail}
+              disabled
+              className="w-full bg-stone-100 border border-stone-200 rounded-xl px-4 py-3 text-[14px] text-stone-400 outline-none cursor-not-allowed"
+            />
+            <p className="text-[11.5px] text-stone-400 mt-1">Email cannot be changed.</p>
+          </Field>
+
+          <Field label="Phone">
+            <input
+              type="tel"
+              value={form.phone}
+              onChange={(e) => updateForm("phone", e.target.value)}
+              placeholder="+977 98XXXXXXXX"
+              className={inputCls}
+            />
+          </Field>
+        </div>
+
+        {/* Profile photo */}
+        <Field label="Profile Photo">
+          <ImageUpload
+            uploadType="profile"
+            accept="image/jpeg,image/png,image/webp"
+            maxSizeMB={5}
+            value={form.profilePhoto}
+            onChange={({ url }) => updateForm("profilePhoto", url)}
+            hint="Square photo recommended · shown in guide listings"
+          />
+        </Field>
+
         {/* Specialty */}
         <Field label="Specialty / Trek Type">
           <input
@@ -460,6 +544,34 @@ function ProfileTab({ form, updateForm, toggleLanguage, onSave, saving }) {
                   <button type="button" onClick={() => removeRoute(r)} className="text-stone-400 hover:text-stone-700 leading-none">×</button>
                 </span>
               ))}
+            </div>
+          )}
+        </Field>
+
+        {/* National ID — read only */}
+        <Field label="Identity Document">
+          {hasNationalId ? (
+            <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-forest-50 border border-forest-200">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-forest-500 shrink-0">
+                <rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" strokeWidth="1.3" />
+                <path d="M5 8l2 2 4-4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              <div className="flex-1 min-w-0">
+                <p className="text-[13px] font-semibold text-forest-700">Document on file</p>
+                <p className="text-[11.5px] text-forest-600">Visible to admin only · contact support to update</p>
+              </div>
+              <span className="text-[11px] px-2 py-0.5 rounded-full bg-forest-100 border border-forest-200 text-forest-700 font-semibold shrink-0">Locked</span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-amber-50 border border-amber-200">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-amber-500 shrink-0">
+                <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.3" />
+                <path d="M8 5v3M8 10v.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              </svg>
+              <div className="flex-1 min-w-0">
+                <p className="text-[13px] font-semibold text-amber-800">No document on file</p>
+                <p className="text-[11.5px] text-amber-700">Contact support or re-register to submit your identity document.</p>
+              </div>
             </div>
           )}
         </Field>

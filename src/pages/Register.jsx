@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useGoogleLogin } from "@react-oauth/google";
 import authService from "../services/api";
 import AuthLayout from "../components/auth/AuthLayout";
+import ImageUpload from "../components/ui/ImageUpload";
 import { SPECIALIZATIONS } from "../data/locations";
 
 const INPUT_CLS = "w-full bg-stone-50 border border-stone-200 rounded-xl py-[13px] pl-11 pr-4 text-[15px] text-stone-800 outline-none transition-all placeholder:text-stone-400 focus:border-forest-400 focus:bg-white focus:ring-2 focus:ring-forest-100";
@@ -64,8 +65,10 @@ export default function Register() {
   const [form, setForm] = useState({
     fullName: "", email: "", password: "", confirmPassword: "",
     role: "trekker", phone: "",
-    licenseNumber: "", yearsExperience: "", specialization: "",
+    yearsExperience: "", specialization: "",
   });
+  const [profilePhotoUrl, setProfilePhotoUrl] = useState("");
+  const [nationalIdPublicId, setNationalIdPublicId] = useState("");
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
@@ -100,9 +103,9 @@ export default function Register() {
 
   const validateStep2Guide = () => {
     const e = {};
-    if (!form.licenseNumber.trim()) e.licenseNumber = "Nepal Tourism Board license number required";
     if (!form.yearsExperience) e.yearsExperience = "Years of experience required";
     if (!form.specialization) e.specialization = "Select primary specialization";
+    if (!nationalIdPublicId) e.nationalId = "National identity document required for guide verification";
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -114,7 +117,7 @@ export default function Register() {
     if (form.role === "guide" && !validateStep2Guide()) return;
     setLoading(true);
     try {
-      await authService.register(form);
+      await authService.register({ ...form, profilePhotoUrl, nationalIdPublicId });
       setRegisteredEmail(form.email);
       setRegisteredRole(form.role);
       setResendTimer(60);
@@ -337,6 +340,18 @@ export default function Register() {
             {errors.confirmPassword && <span className={ERR_CLS}>{errors.confirmPassword}</span>}
           </div>
 
+          <div className="mb-5">
+            <ImageUpload
+              label="Profile photo"
+              uploadType="profile"
+              accept="image/jpeg,image/png,image/webp"
+              maxSizeMB={5}
+              value={profilePhotoUrl}
+              onChange={({ url }) => setProfilePhotoUrl(url)}
+              hint="Optional — shown on your profile and guide listings"
+            />
+          </div>
+
           <button type="submit" className="w-full mt-1.5 bg-forest-500 text-white rounded-xl p-[14px] text-[15px] font-semibold tracking-wide flex items-center justify-center gap-2 cursor-pointer transition-all hover:bg-forest-600 hover:-translate-y-[1px] hover:shadow-lg active:translate-y-0">
             Continue
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -372,18 +387,21 @@ export default function Register() {
           {form.role === "guide" && (
             <div className="mb-2 p-4 rounded-xl bg-blue-50 border border-blue-200 space-y-4">
               <p className="text-[12.5px] text-blue-700 leading-relaxed">
-                Guide accounts require manual review. Submit your Nepal Tourism Board credentials — our team verifies within 2–3 business days.
+                Guide accounts require manual review. Upload your identity document — our team verifies within 2–3 business days.
               </p>
               <div>
-                <label htmlFor="licenseNumber" className="flex items-center text-[12px] font-semibold text-stone-500 tracking-[0.12em] uppercase mb-2">NTB License number <span className="text-red-500 ml-1">*</span></label>
-                <div className="relative flex items-center">
-                  <svg className="absolute left-3.5 text-stone-400 pointer-events-none" width="18" height="18" viewBox="0 0 18 18" fill="none">
-                    <rect x="2" y="3" width="14" height="12" rx="2" stroke="currentColor" strokeWidth="1.4" />
-                    <path d="M5 7h8M5 10h5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-                  </svg>
-                  <input id="licenseNumber" type="text" name="licenseNumber" value={form.licenseNumber} onChange={handleChange} placeholder="e.g. NTB-G-2024-XXXXX" className={INPUT_SM} />
-                </div>
-                {errors.licenseNumber && <span className={ERR_CLS}>{errors.licenseNumber}</span>}
+                <ImageUpload
+                  label="National Identity Document"
+                  uploadType="national-id"
+                  accept="image/jpeg,image/png,application/pdf"
+                  maxSizeMB={10}
+                  value={nationalIdPublicId}
+                  onChange={({ publicId }) => setNationalIdPublicId(publicId)}
+                  required
+                  isDocument
+                  hint="Passport, citizenship or national ID — stored securely, visible only to our admin team"
+                  error={errors.nationalId}
+                />
               </div>
 
               <div className="grid grid-cols-2 gap-3">

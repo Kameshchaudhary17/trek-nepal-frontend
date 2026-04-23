@@ -40,8 +40,14 @@ function TrekCard({ trek }) {
 
   return (
     <div className="group bg-white border border-stone-200 rounded-2xl overflow-hidden hover:border-stone-300 hover:shadow-xl transition-all hover:-translate-y-1 flex flex-col">
-      {/* Colour accent */}
-      <div className="h-1.5 w-full shrink-0" style={{ background: `linear-gradient(90deg, ${trek.color}, ${trek.color}70)` }} />
+      {/* Trek photo or colour accent */}
+      {trek.photo ? (
+        <div className="h-36 w-full shrink-0 overflow-hidden">
+          <img src={trek.photo} alt={trek.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+        </div>
+      ) : (
+        <div className="h-1.5 w-full shrink-0" style={{ background: `linear-gradient(90deg, ${trek.color}, ${trek.color}70)` }} />
+      )}
 
       <div className="p-5 flex flex-col flex-1">
         {/* Header */}
@@ -153,7 +159,7 @@ function TrekCard({ trek }) {
 
         {/* CTA */}
         <Link
-          to="/guides"
+          to={`/guides?trek=${encodeURIComponent(trek.name)}&region=${encodeURIComponent(trek.region)}`}
           className="block w-full text-center py-[10px] rounded-xl bg-forest-500 text-white text-[13.5px] font-semibold hover:bg-forest-600 hover:shadow-md transition-all"
         >
           Find guides for this trek →

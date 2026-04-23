@@ -17,12 +17,20 @@ export default function GuideCard({ guide }) {
     <div className="group flex flex-col bg-white border border-stone-200 rounded-2xl p-5 hover:border-stone-300 hover:shadow-md transition-all hover:-translate-y-0.5">
       {/* Avatar + name */}
       <div className="flex items-start gap-4 mb-4">
-        <div
-          className="w-14 h-14 rounded-xl flex items-center justify-center font-serif font-bold text-[1.1rem] text-white shrink-0"
-          style={{ background: `linear-gradient(135deg, ${guide.color}CC, ${guide.color}99)` }}
-        >
-          {guide.initials}
-        </div>
+        {guide.user?.profilePhoto ? (
+          <img
+            src={guide.user.profilePhoto}
+            alt={guide.name}
+            className="w-14 h-14 rounded-xl object-cover shrink-0"
+          />
+        ) : (
+          <div
+            className="w-14 h-14 rounded-xl flex items-center justify-center font-serif font-bold text-[1.1rem] text-white shrink-0"
+            style={{ background: `linear-gradient(135deg, ${guide.color}CC, ${guide.color}99)` }}
+          >
+            {guide.initials}
+          </div>
+        )}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
             <h3 className="font-serif text-[1rem] font-semibold text-stone-900">{guide.name}</h3>

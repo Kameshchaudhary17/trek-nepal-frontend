@@ -47,6 +47,14 @@ const authService = {
     });
   },
 
+  updateMe(data) {
+    return request('/users/me', {
+      method: 'PATCH',
+      headers: authHeader(),
+      body: JSON.stringify(data),
+    });
+  },
+
   googleAuth(accessToken) {
     return request('/auth/google', {
       method: 'POST',
@@ -155,6 +163,20 @@ export const conditionsService = {
   },
   getRegions() {
     return request('/conditions/regions');
+  },
+};
+
+export const uploadService = {
+  async upload(file, type) {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await fetch(`${BASE_URL}/upload/${type}`, {
+      method: 'POST',
+      body: formData,
+    });
+    const data = await res.json();
+    if (!res.ok) throw { response: { data } };
+    return data;
   },
 };
 

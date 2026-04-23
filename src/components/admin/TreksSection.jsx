@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { treksService } from "../../services/api";
+import ImageUpload from "../ui/ImageUpload";
 
 const DIFFICULTIES = ["Easy", "Moderate", "Moderate–Hard", "Hard"];
 const REGIONS = ["Khumbu", "Gandaki", "Bagmati", "Eastern Nepal", "Karnali", "Mustang", "Other"];
@@ -8,7 +9,7 @@ const COLORS = ["#2D6A4F", "#5E6BAD", "#C05621", "#2E7A8A", "#8B6914", "#7C3D87"
 const EMPTY_FORM = {
   name: "", region: "", difficulty: "Moderate", minDays: "", maxDays: "",
   altitude: "", altitudeM: "", season: "", bestMonths: "", guideFrom: "",
-  color: "#2D6A4F", restricted: false, desc: "",
+  color: "#2D6A4F", restricted: false, desc: "", photo: "",
   tags: "", highlights: ["", "", "", ""],
   permits: [{ name: "", cost: "" }],
 };
@@ -175,6 +176,19 @@ function TrekForm({ initial, onSave, onCancel, saving }) {
           value={form.desc} onChange={(e) => set("desc", e.target.value)}
           rows={3} placeholder="Short description of the trek..."
           className="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2.5 text-[13.5px] text-stone-800 outline-none transition-all placeholder:text-stone-400 focus:border-forest-400 focus:ring-2 focus:ring-forest-100 resize-none"
+        />
+      </div>
+
+      {/* Trek photo */}
+      <div>
+        <Label>Trek Photo</Label>
+        <ImageUpload
+          uploadType="trek"
+          accept="image/jpeg,image/png,image/webp"
+          maxSizeMB={10}
+          value={form.photo}
+          onChange={({ url }) => set("photo", url)}
+          hint="Hero image shown on the trek card · 1200×800 recommended"
         />
       </div>
 

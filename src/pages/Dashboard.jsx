@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import Navbar from "../components/ui/Navbar";
+import DashboardHeader from "../components/ui/DashboardHeader";
+import SidebarAvatarMenu from "../components/ui/SidebarAvatarMenu";
+import ImageUpload from "../components/ui/ImageUpload";
+import authService from "../services/api";
 
 const NAV = [
   { id: "overview",  label: "Overview",  icon: OverviewIcon  },
@@ -38,7 +41,7 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-stone-50 font-sans text-stone-900">
-      <Navbar />
+      <DashboardHeader title="My Dashboard" />
 
       <div className="flex pt-[68px] min-h-screen">
         {/* Sidebar overlay */}
@@ -49,16 +52,22 @@ export default function Dashboard() {
         {/* ── Sidebar ── */}
         <aside className={`fixed top-[68px] left-0 h-[calc(100vh-68px)] w-[240px] bg-white border-r border-stone-200 flex flex-col z-50 transition-transform duration-200 md:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}>
           {/* User info */}
-          <div className="px-5 pt-6 pb-5 border-b border-stone-100">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center font-serif font-bold text-[0.9rem] text-white bg-forest-500 shrink-0">
-                {initials}
-              </div>
-              <div className="min-w-0">
-                <div className="text-[13px] font-semibold text-stone-900 truncate">{user.fullName}</div>
-                <div className="text-[11px] text-stone-400 truncate">{user.email}</div>
-              </div>
-            </div>
+          <div className="px-5 pt-5 pb-4 border-b border-stone-100">
+            <SidebarAvatarMenu
+              photo={user.profilePhoto}
+              initials={initials}
+              name={user.fullName}
+              email={user.email}
+              viewProfileAction={() => setActiveTab("account")}
+              onPhotoChange={async (url) => {
+                try {
+                  const res = await authService.updateMe({ profilePhoto: url });
+                  const updated = { ...user, ...res.user };
+                  setUser(updated);
+                  localStorage.setItem("user", JSON.stringify(updated));
+                } catch {}
+              }}
+            />
             <span className="inline-flex items-center gap-1.5 mt-3 text-[11px] px-2.5 py-1 rounded-full bg-stone-100 border border-stone-200 text-stone-600 font-semibold">
               Trekker
             </span>
@@ -114,7 +123,7 @@ export default function Dashboard() {
             {activeTab === "overview" && <OverviewTab user={user} setActiveTab={setActiveTab} />}
             {activeTab === "explore"  && <ExploreTab />}
             {activeTab === "bookings" && <BookingsTab />}
-            {activeTab === "account"  && <AccountTab user={user} />}
+            {activeTab === "account"  && <AccountTab user={user} setUser={setUser} />}
           </div>
         </main>
       </div>
@@ -273,36 +282,188 @@ function BookingsTab() {
 }
 
 /* ── Account Tab ────────────────────────────────────────────────── */
-function AccountTab({ user }) {
+function AccountTab({ user, setUser }) {
+  const [form,    setForm]    = useState({ fullName: user.fullName || "", phone: user.phone || "", profilePhoto: user.profilePhoto || "" });
+  const [saving,  setSaving]  = useState(false);
+  const [toast,   setToast]   = useState(null);
+  const [errors,  setErrors]  = useState({});
+
+  function showToast(msg, type = "success") {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 3000);
+  }
+
+  function set(field, val) {
+    setForm((f) => ({ ...f, [field]: val }));
+    setErrors((e) => ({ ...e, [field]: "" }));
+  }
+
+  function validate() {
+    const e = {};
+    if (!form.fullName.trim()) e.fullName = "Full name is required";
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  }
+
+  async function handleSave(e) {
+    e.preventDefault();
+    if (!validate()) return;
+    setSaving(true);
+    try {
+      const res = await authService.updateMe({
+        fullName:     form.fullName.trim(),
+        phone:        form.phone,
+        profilePhoto: form.profilePhoto,
+      });
+      const updated = { ...user, ...res.user };
+      setUser(updated);
+      localStorage.setItem("user", JSON.stringify(updated));
+      showToast("Profile saved successfully.");
+    } catch {
+      showToast("Failed to save. Try again.", "error");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const initials = user.fullName?.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase() || "?";
+
   return (
     <div className="max-w-[560px]">
+      {/* Toast */}
+      {toast && (
+        <div className={`fixed bottom-6 right-6 z-[100] flex items-center gap-2.5 px-4 py-3 rounded-xl text-[13.5px] font-semibold shadow-lg border ${
+          toast.type === "error" ? "bg-red-50 border-red-200 text-red-700" : "bg-forest-50 border-forest-200 text-forest-700"
+        }`}>
+          {toast.type === "error" ? "✕" : "✓"} {toast.msg}
+        </div>
+      )}
+
       <div className="mb-7">
         <span className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-forest-500 font-semibold mb-2">
           <span className="w-5 h-px bg-forest-300" /> Account
         </span>
-        <h2 className="font-serif text-[1.7rem] font-bold text-stone-900">Account Details</h2>
+        <h2 className="font-serif text-[1.7rem] font-bold text-stone-900">My Profile</h2>
+        <p className="text-[13.5px] text-stone-400 mt-1">Update your name, phone and profile photo.</p>
       </div>
 
-      <div className="bg-white border border-stone-200 rounded-2xl divide-y divide-stone-100">
-        {[
-          { label: "Full name",  value: user.fullName },
-          { label: "Email",      value: user.email },
-          { label: "Role",       value: user.role === "trekker" ? "Trekker" : user.role },
-          { label: "Phone",      value: user.phone || "Not set" },
-          { label: "Member since", value: "2026" },
-        ].map(({ label, value }) => (
-          <div key={label} className="flex items-center justify-between px-5 py-4">
-            <span className="text-[12.5px] text-stone-400 font-medium uppercase tracking-[0.08em]">{label}</span>
-            <span className="text-[14px] text-stone-800 font-medium">{value}</span>
+      <form onSubmit={handleSave} className="space-y-5">
+        {/* Profile photo */}
+        <div>
+          <label className="block text-[11.5px] font-semibold text-stone-500 uppercase tracking-[0.12em] mb-2">
+            Profile photo
+          </label>
+          <div className="flex items-center gap-4 mb-3">
+            {form.profilePhoto ? (
+              <img src={form.profilePhoto} alt={form.fullName}
+                className="w-16 h-16 rounded-2xl object-cover border border-stone-200 shrink-0" />
+            ) : (
+              <div className="w-16 h-16 rounded-2xl bg-forest-500 flex items-center justify-center font-serif font-bold text-[1.1rem] text-white shrink-0">
+                {initials}
+              </div>
+            )}
+            <div className="flex-1">
+              <ImageUpload
+                uploadType="profile"
+                accept="image/jpeg,image/png,image/webp"
+                maxSizeMB={5}
+                value={form.profilePhoto}
+                onChange={({ url }) => set("profilePhoto", url)}
+              />
+            </div>
           </div>
-        ))}
-      </div>
+        </div>
 
-      <div className="mt-5 p-4 rounded-xl bg-blue-50 border border-blue-200">
-        <p className="text-[12.5px] text-blue-700 leading-relaxed">
-          To update your email or password, please contact support. Profile editing coming in a future release.
-        </p>
-      </div>
+        {/* Full name */}
+        <div>
+          <label className="block text-[11.5px] font-semibold text-stone-500 uppercase tracking-[0.12em] mb-2">
+            Full name <span className="text-red-400">*</span>
+          </label>
+          <div className="relative flex items-center">
+            <svg className="absolute left-3.5 text-stone-400 pointer-events-none" width="16" height="16" viewBox="0 0 18 18" fill="none">
+              <circle cx="9" cy="6" r="3" stroke="currentColor" strokeWidth="1.4" />
+              <path d="M2 15c0-3.314 3.134-6 7-6s7 2.686 7 6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+            </svg>
+            <input
+              type="text"
+              value={form.fullName}
+              onChange={(e) => set("fullName", e.target.value)}
+              placeholder="Your full name"
+              className={`w-full bg-stone-50 border rounded-xl py-3 pl-10 pr-4 text-[14px] text-stone-800 outline-none transition-all placeholder:text-stone-400 focus:ring-2 focus:ring-forest-100 ${errors.fullName ? "border-red-300 bg-red-50" : "border-stone-200 focus:border-forest-400"}`}
+            />
+          </div>
+          {errors.fullName && <p className="text-[12px] text-red-500 mt-1">{errors.fullName}</p>}
+        </div>
+
+        {/* Email — read only */}
+        <div>
+          <label className="block text-[11.5px] font-semibold text-stone-500 uppercase tracking-[0.12em] mb-2">
+            Email address
+          </label>
+          <div className="relative flex items-center">
+            <svg className="absolute left-3.5 text-stone-300 pointer-events-none" width="16" height="16" viewBox="0 0 18 18" fill="none">
+              <rect x="1.5" y="4" width="15" height="10.5" rx="2" stroke="currentColor" strokeWidth="1.4" />
+              <path d="M1.5 6.5L9 11L16.5 6.5" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+            </svg>
+            <input
+              type="email"
+              value={user.email}
+              disabled
+              className="w-full bg-stone-100 border border-stone-200 rounded-xl py-3 pl-10 pr-10 text-[14px] text-stone-400 outline-none cursor-not-allowed"
+            />
+            <svg className="absolute right-3.5 text-stone-300 pointer-events-none" width="14" height="14" viewBox="0 0 16 16" fill="none">
+              <rect x="4" y="7" width="8" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.3" />
+              <path d="M5.5 7V5a2.5 2.5 0 015 0v2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+            </svg>
+          </div>
+          <p className="text-[11.5px] text-stone-400 mt-1.5">Email cannot be changed. Contact support if needed.</p>
+        </div>
+
+        {/* Phone */}
+        <div>
+          <label className="block text-[11.5px] font-semibold text-stone-500 uppercase tracking-[0.12em] mb-2">
+            Phone number
+          </label>
+          <div className="relative flex items-center">
+            <svg className="absolute left-3.5 text-stone-400 pointer-events-none" width="16" height="16" viewBox="0 0 18 18" fill="none">
+              <rect x="5" y="1.5" width="8" height="15" rx="2" stroke="currentColor" strokeWidth="1.4" />
+              <circle cx="9" cy="13.5" r=".75" fill="currentColor" />
+            </svg>
+            <input
+              type="tel"
+              value={form.phone}
+              onChange={(e) => set("phone", e.target.value)}
+              placeholder="+977 98XXXXXXXX"
+              className="w-full bg-stone-50 border border-stone-200 rounded-xl py-3 pl-10 pr-4 text-[14px] text-stone-800 outline-none transition-all placeholder:text-stone-400 focus:border-forest-400 focus:bg-white focus:ring-2 focus:ring-forest-100"
+            />
+          </div>
+        </div>
+
+        {/* Role — read only */}
+        <div>
+          <label className="block text-[11.5px] font-semibold text-stone-500 uppercase tracking-[0.12em] mb-2">
+            Account type
+          </label>
+          <div className="flex items-center gap-2 px-4 py-3 bg-stone-100 border border-stone-200 rounded-xl">
+            <span className="text-[14px] text-stone-500">🥾</span>
+            <span className="text-[14px] font-medium text-stone-600 capitalize">{user.role}</span>
+            <span className="ml-auto text-[11.5px] text-stone-400">Cannot be changed</span>
+          </div>
+        </div>
+
+        <div className="pt-1">
+          <button
+            type="submit"
+            disabled={saving}
+            className="px-7 py-3 bg-forest-500 text-white rounded-xl text-[14px] font-semibold hover:bg-forest-600 transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2"
+          >
+            {saving
+              ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Saving…</>
+              : "Save changes"
+            }
+          </button>
+        </div>
+      </form>
     </div>
   );
 }

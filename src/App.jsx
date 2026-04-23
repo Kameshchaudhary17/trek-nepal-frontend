@@ -9,6 +9,7 @@ import Dashboard from './pages/Dashboard';
 import GuideDashboard from './pages/GuideDashboard';
 import Conditions from './pages/Conditions';
 import Treks from './pages/Treks';
+import GuideProfile from './pages/GuideProfile';
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
         <Route path="/admin/pricing" element={<AdminDashboard />} />
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/guides" element={<GuideListing />} />
+        <Route path="/guides/:id" element={<GuideProfile />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/guide/dashboard" element={<GuideDashboard />} />
         <Route path="/conditions" element={<Conditions />} />
