@@ -70,50 +70,33 @@ function Stars({ n = 5 }) {
   );
 }
 
-function DifficultyBadge({ level }) {
-  const map = {
-    Hard: "bg-red-50 text-red-700 border-red-200",
-    "Moderate–Hard": "bg-amber-50 text-amber-700 border-amber-200",
-    Moderate: "bg-forest-50 text-forest-600 border-forest-200",
-  };
-  return (
-    <span className={`text-[11px] px-2 py-[2px] rounded-full border font-medium ${map[level] || map["Moderate"]}`}>
-      {level}
-    </span>
-  );
-}
-
 function RouteCard({ route }) {
   return (
-    <div className="group flex-shrink-0 w-[280px] sm:w-auto bg-white border border-stone-200 rounded-2xl overflow-hidden hover:border-stone-300 hover:shadow-lg transition-all hover:-translate-y-1 cursor-pointer">
-      <div className="h-1.5 w-full" style={{ background: `linear-gradient(90deg, ${route.color}, ${route.color}80)` }} />
-      <div className="p-5">
-        <div className="flex items-start justify-between mb-3">
-          <div>
-            <h3 className="font-serif text-[1rem] font-semibold text-stone-900 leading-snug mb-0.5">{route.name}</h3>
-            <span className="text-[12px] text-stone-400">{route.region} Province</span>
+    <div className="group flex-shrink-0 w-[280px] sm:w-auto bg-white border border-stone-100 rounded-xl overflow-hidden hover:border-stone-300 transition-colors cursor-pointer">
+      <div className="p-6">
+        <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.14em] text-stone-400 mb-2">
+          <span>{route.difficulty}</span>
+          <span className="text-stone-300">·</span>
+          <span className="normal-case tracking-normal">{route.region}</span>
+        </div>
+        <div className="flex items-start justify-between gap-4 mb-5">
+          <h3 className="text-[1.1rem] font-medium text-stone-900 leading-snug">{route.name}</h3>
+          <div className="shrink-0 text-right">
+            <div className="text-[1rem] font-medium text-stone-900 tabular-nums leading-none">${route.priceFrom}</div>
+            <div className="text-[10.5px] text-stone-400 mt-1">from / person</div>
           </div>
-          <DifficultyBadge level={route.difficulty} />
         </div>
-        <div className="flex flex-wrap gap-1.5 mb-4">
-          {route.tags.map((t) => (
-            <span key={t} className="text-[11px] px-2 py-[2px] rounded-full bg-stone-100 text-stone-600 border border-stone-200">{t}</span>
-          ))}
-        </div>
-        <div className="grid grid-cols-3 gap-2 mb-4">
-          <RouteStat label="Duration" value={`${route.days} d`} />
+        <div className="grid grid-cols-3 py-4 border-y border-stone-100 mb-5">
+          <RouteStat label="Duration" value={`${route.days}d`} />
           <RouteStat label="Max alt." value={route.altitude} />
           <RouteStat label="Season" value={route.season.split(",")[0]} />
         </div>
-        <div className="flex items-center justify-between pt-3 border-t border-stone-100">
-          <div>
-            <span className="text-[11px] text-stone-400">Guide from</span>
-            <div className="text-terra-500 font-semibold text-[15px]">${route.priceFrom} <span className="text-[12px] font-normal text-stone-400">/ person</span></div>
-          </div>
-          <Link to="/guides" className="text-[13px] px-3 py-[7px] rounded-lg bg-stone-50 border border-stone-200 text-stone-700 hover:bg-forest-50 hover:text-forest-600 hover:border-forest-200 transition-all">
-            Find guides →
-          </Link>
-        </div>
+        <Link to="/guides" className="inline-flex items-center gap-1.5 text-[13px] font-medium text-forest-600 hover:text-forest-700 transition-colors group/cta">
+          Find guides
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="transition-transform group-hover/cta:translate-x-0.5">
+            <path d="M2 6h8M6 2l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </Link>
       </div>
     </div>
   );
@@ -121,9 +104,9 @@ function RouteCard({ route }) {
 
 function RouteStat({ label, value }) {
   return (
-    <div className="text-center">
-      <div className="text-[11px] text-stone-400 mb-0.5">{label}</div>
-      <div className="text-[12px] text-stone-700 font-medium leading-tight">{value}</div>
+    <div>
+      <div className="text-[10px] uppercase tracking-[0.12em] text-stone-400 mb-0.5">{label}</div>
+      <div className="text-[13px] font-medium text-stone-900 tabular-nums leading-tight">{value}</div>
     </div>
   );
 }
@@ -240,6 +223,36 @@ function HeroSearch() {
   );
 }
 
+const STEP_ICON = { width: 28, height: 28, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.4, strokeLinecap: "round", strokeLinejoin: "round" };
+
+function StepSearch() {
+  return (
+    <svg {...STEP_ICON}>
+      <circle cx="10.5" cy="10.5" r="6.5" />
+      <path d="M15.5 15.5L20 20" />
+    </svg>
+  );
+}
+
+function StepClipboard() {
+  return (
+    <svg {...STEP_ICON}>
+      <rect x="6" y="5" width="12" height="16" rx="1.5" />
+      <path d="M9 3h6v4H9z" />
+      <path d="M9 12h6M9 16h4" opacity=".6" />
+    </svg>
+  );
+}
+
+function StepMountain() {
+  return (
+    <svg {...STEP_ICON}>
+      <path d="M3 19l6-11 4 7 3-5 5 9H3z" />
+      <path d="M8 14l1-2" opacity=".5" />
+    </svg>
+  );
+}
+
 function SectionHead({ eyebrow, title, sub }) {
   return (
     <div className="mb-10 sm:mb-12 text-center">
@@ -309,17 +322,17 @@ export default function Home() {
       </div>
 
       {/* ── Stats bar ── */}
-      <div className="relative z-10 border-y border-stone-200 bg-white">
-        <div className="max-w-[1200px] mx-auto px-5 sm:px-8 py-6 grid grid-cols-2 sm:grid-cols-4 gap-6 sm:gap-0 sm:divide-x sm:divide-stone-200">
+      <div className="relative z-10 border-y border-stone-100 bg-white">
+        <div className="max-w-[1200px] mx-auto px-5 sm:px-8 py-8 grid grid-cols-2 sm:grid-cols-4 gap-6 sm:gap-0 sm:divide-x sm:divide-stone-100">
           {[
             { value: "1,200+", label: "Verified guides" },
             { value: "80+", label: "Trek routes" },
             { value: "15,000+", label: "Trekkers served" },
-            { value: "4.9 ★", label: "Average guide rating" },
+            { value: "4.9★", label: "Average guide rating" },
           ].map((s) => (
             <div key={s.label} className="text-center sm:px-6">
-              <div className="font-serif text-[1.7rem] font-bold text-forest-500 leading-none mb-1">{s.value}</div>
-              <div className="text-[12.5px] text-stone-400">{s.label}</div>
+              <div className="text-[1.75rem] font-medium text-stone-900 leading-none mb-2 tabular-nums">{s.value}</div>
+              <div className="text-[12.5px] text-stone-500">{s.label}</div>
             </div>
           ))}
         </div>
@@ -358,16 +371,16 @@ export default function Home() {
           <div className="grid sm:grid-cols-3 gap-6 sm:gap-8 relative">
             <div className="hidden sm:block absolute top-[52px] left-[calc(16.67%+12px)] right-[calc(16.67%+12px)] h-px bg-stone-200" />
             {[
-              { step: "01", title: "Search & Compare", desc: "Filter guides by route, language, rating, and price. Read real reviews from past trekkers.", icon: "🔍" },
-              { step: "02", title: "Book & Confirm", desc: "Message guides directly, agree on itinerary, and secure your booking — no agency middleman.", icon: "📋" },
-              { step: "03", title: "Trek with Confidence", desc: "Your NTB-verified guide meets you at the trailhead. Permits, acclimatisation and safety handled.", icon: "🏔️" },
+              { step: "01", title: "Search & Compare", desc: "Filter guides by route, language, rating, and price. Read real reviews from past trekkers.", Icon: StepSearch },
+              { step: "02", title: "Book & Confirm", desc: "Message guides directly, agree on itinerary, and secure your booking — no agency middleman.", Icon: StepClipboard },
+              { step: "03", title: "Trek with Confidence", desc: "Your NTB-verified guide meets you at the trailhead. Permits, acclimatisation and safety handled.", Icon: StepMountain },
             ].map((s) => (
-              <div key={s.step} className="relative text-center p-6 sm:p-8 bg-stone-50 border border-stone-200 rounded-2xl hover:border-forest-200 hover:bg-forest-50 transition-all">
-                <div className="w-12 h-12 mx-auto mb-4 rounded-xl bg-forest-100 border border-forest-200 flex items-center justify-center text-2xl">
-                  {s.icon}
+              <div key={s.step} className="relative text-center px-6 pt-10 pb-8">
+                <div className="w-10 h-10 mx-auto mb-6 flex items-center justify-center text-forest-600">
+                  <s.Icon />
                 </div>
-                <div className="font-serif text-[0.7rem] tracking-[0.2em] text-forest-400 mb-2">{s.step}</div>
-                <h3 className="font-serif text-[1.05rem] font-semibold text-stone-900 mb-2">{s.title}</h3>
+                <div className="text-[11px] tracking-[0.18em] text-stone-400 mb-3">{s.step}</div>
+                <h3 className="text-[16px] font-medium text-stone-900 mb-2">{s.title}</h3>
                 <p className="text-[13.5px] text-stone-500 leading-relaxed">{s.desc}</p>
               </div>
             ))}

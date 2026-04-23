@@ -5,9 +5,9 @@ import { conditionsService } from "../services/api";
 const STATUSES = ["All", "Open", "Caution", "Closed"];
 
 const STATUS_CFG = {
-  open:    { label: "Open",    badge: "bg-emerald-50 text-emerald-700 border-emerald-200", dot: "bg-emerald-500", icon: "✓" },
-  caution: { label: "Caution", badge: "bg-amber-50 text-amber-700 border-amber-200",       dot: "bg-amber-500",   icon: "!" },
-  closed:  { label: "Closed",  badge: "bg-red-50 text-red-700 border-red-200",             dot: "bg-red-500",     icon: "✕" },
+  open:    { label: "Open",    dot: "bg-emerald-500", text: "text-emerald-700" },
+  caution: { label: "Caution", dot: "bg-amber-500",   text: "text-amber-700" },
+  closed:  { label: "Closed",  dot: "bg-red-500",     text: "text-red-700" },
 };
 
 const TRAIL_CFG = {
@@ -19,33 +19,20 @@ const TRAIL_CFG = {
 /* ── Skeleton ──────────────────────────────────────────────────── */
 function SkeletonCard() {
   return (
-    <div className="bg-white border border-stone-200 rounded-2xl overflow-hidden animate-pulse">
-      <div className="h-1 w-full bg-stone-200" />
-      <div className="p-5 space-y-3">
-        <div className="flex justify-between items-start">
-          <div className="space-y-1.5 flex-1">
-            <div className="h-4 w-40 bg-stone-200 rounded" />
-            <div className="h-3 w-24 bg-stone-100 rounded" />
+    <div className="bg-white border border-stone-100 rounded-xl p-6 animate-pulse">
+      <div className="h-3 w-32 bg-stone-100 rounded mb-3" />
+      <div className="h-5 w-48 bg-stone-100 rounded mb-5" />
+      <div className="grid grid-cols-2 gap-y-4 py-4 border-y border-stone-100 mb-5">
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="space-y-1.5">
+            <div className="h-2 w-12 bg-stone-100 rounded" />
+            <div className="h-4 w-20 bg-stone-100 rounded" />
           </div>
-          <div className="h-5 w-16 bg-stone-200 rounded-full" />
-        </div>
-        <div className="grid grid-cols-2 gap-3 p-3 rounded-xl bg-stone-50">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="space-y-1">
-              <div className="h-2.5 w-14 bg-stone-200 rounded" />
-              <div className="h-4 w-20 bg-stone-200 rounded" />
-            </div>
-          ))}
-        </div>
-        <div className="h-9 w-full bg-stone-100 rounded-xl" />
-        <div className="space-y-1.5">
-          <div className="flex justify-between">
-            <div className="h-2.5 w-20 bg-stone-100 rounded" />
-            <div className="h-2.5 w-10 bg-stone-100 rounded" />
-          </div>
-          <div className="h-1.5 w-full bg-stone-200 rounded-full" />
-        </div>
+        ))}
       </div>
+      <div className="h-3 w-40 bg-stone-100 rounded mb-5" />
+      <div className="h-[3px] w-full bg-stone-100 rounded-full mb-5" />
+      <div className="h-2.5 w-24 bg-stone-100 rounded" />
     </div>
   );
 }
@@ -55,99 +42,71 @@ function ConditionCard({ item }) {
   const s = STATUS_CFG[item.status] ?? STATUS_CFG.open;
   const t = TRAIL_CFG[item.trail]   ?? TRAIL_CFG.good;
 
-  const borderCls =
-    item.status === "closed"  ? "border-red-200 hover:border-red-300"   :
-    item.status === "caution" ? "border-amber-200 hover:border-amber-300" :
-    "border-stone-200 hover:border-stone-300";
-
   if (item.error) {
     return (
-      <div className="bg-white border border-stone-200 rounded-2xl p-5 flex items-center gap-3">
-        <div className="w-8 h-8 rounded-lg bg-stone-100 flex items-center justify-center shrink-0">
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-stone-400">
-            <circle cx="7" cy="7" r="6" stroke="currentColor" strokeWidth="1.3" />
-            <path d="M7 4v3M7 9v.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
-          </svg>
-        </div>
-        <div>
-          <p className="text-[13px] font-medium text-stone-700">{item.name}</p>
-          <p className="text-[11.5px] text-stone-400">{item.region} · Data unavailable</p>
-        </div>
+      <div className="bg-white border border-stone-100 rounded-xl p-6">
+        <p className="text-[14px] font-medium text-stone-700">{item.name}</p>
+        <p className="text-[12px] text-stone-400 mt-0.5">{item.region} · Data unavailable</p>
       </div>
     );
   }
 
   return (
-    <div className={`bg-white border rounded-2xl overflow-hidden transition-all hover:shadow-lg hover:-translate-y-0.5 ${borderCls}`}>
-      <div className="h-1 w-full bg-gradient-to-r from-forest-500 to-forest-300" />
-
-      <div className="p-5">
+    <div className="bg-white border border-stone-100 rounded-xl overflow-hidden hover:border-stone-300 transition-colors">
+      <div className="p-6">
         {/* Header */}
-        <div className="flex items-start justify-between gap-3 mb-3">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap mb-0.5">
-              <h3 className="font-serif text-[0.95rem] font-semibold text-stone-900 leading-snug">
-                {item.name}
-              </h3>
-              <span className={`text-[10px] px-2 py-[2px] rounded-full border font-semibold flex items-center gap-1 ${s.badge}`}>
-                {s.icon} {s.label}
-              </span>
-            </div>
-            <span className="text-[11.5px] text-stone-400">{item.region}</span>
-          </div>
+        <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.14em] text-stone-400 mb-2">
+          <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
+          <span className={s.text}>{s.label}</span>
+          <span className="text-stone-300">·</span>
+          <span className="normal-case tracking-normal">{item.region}</span>
         </div>
+        <h3 className="text-[1.05rem] font-medium text-stone-900 leading-snug mb-5">{item.name}</h3>
 
-        {/* Stats grid */}
-        <div className="grid grid-cols-2 gap-3 mb-4 p-3 rounded-xl bg-stone-50 border border-stone-100">
+        {/* Stats */}
+        <div className="grid grid-cols-2 py-4 border-y border-stone-100 mb-5">
           <div>
-            <div className="text-[10px] uppercase tracking-wide text-stone-400 mb-0.5">Now</div>
-            <div className="text-[15px] font-bold text-stone-800">{item.temp}°C</div>
+            <div className="text-[10px] uppercase tracking-[0.12em] text-stone-400 mb-0.5">Now</div>
+            <div className="text-[18px] font-medium text-stone-900 tabular-nums">{item.temp}°C</div>
           </div>
           <div>
-            <div className="text-[10px] uppercase tracking-wide text-stone-400 mb-0.5">Today</div>
-            <div className="text-[13px] font-semibold text-stone-700">
-              <span className="text-blue-500">{item.tempMin}°</span>
-              <span className="text-stone-300 mx-1">/</span>
-              <span className="text-red-400">{item.tempMax}°C</span>
+            <div className="text-[10px] uppercase tracking-[0.12em] text-stone-400 mb-0.5">Today</div>
+            <div className="text-[14px] font-medium text-stone-900 tabular-nums">
+              {item.tempMin}° <span className="text-stone-300">/</span> {item.tempMax}°
             </div>
           </div>
-          <div>
-            <div className="text-[10px] uppercase tracking-wide text-stone-400 mb-0.5">Wind</div>
-            <div className="text-[13px] font-semibold text-stone-700">{item.windspeed} km/h</div>
+          <div className="mt-4">
+            <div className="text-[10px] uppercase tracking-[0.12em] text-stone-400 mb-0.5">Wind</div>
+            <div className="text-[13.5px] text-stone-700 tabular-nums">{item.windspeed} km/h</div>
           </div>
-          <div>
-            <div className="text-[10px] uppercase tracking-wide text-stone-400 mb-0.5">
+          <div className="mt-4">
+            <div className="text-[10px] uppercase tracking-[0.12em] text-stone-400 mb-0.5">
               {item.snowfall > 0 ? "Snowfall" : "Precipitation"}
             </div>
-            <div className="text-[13px] font-semibold text-stone-700">
+            <div className="text-[13.5px] text-stone-700 tabular-nums">
               {item.snowfall > 0 ? `${item.snowfall} cm` : `${item.precipitation} mm`}
             </div>
           </div>
         </div>
 
-        {/* Weather description */}
-        <div className={`mb-4 px-3 py-2.5 rounded-xl text-[12.5px] font-medium border flex items-center gap-2
-          ${item.status === "closed"  ? "bg-red-50 border-red-100 text-red-700"       :
-            item.status === "caution" ? "bg-amber-50 border-amber-100 text-amber-700" :
-                                        "bg-emerald-50 border-emerald-100 text-emerald-700"}`}>
-          <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${s.dot}`} />
+        {/* Weather */}
+        <p className="text-[13px] text-stone-500 mb-5">
           {item.desc}
           {item.snowfall > 0 && ` · ${item.snowfall}cm snow`}
-        </div>
+        </p>
 
-        {/* Trail quality bar */}
-        <div className="mb-4">
-          <div className="flex items-center justify-between mb-1.5">
-            <span className="text-[10.5px] text-stone-400 uppercase tracking-wide">Trail Quality</span>
-            <span className={`text-[11px] font-semibold ${t.color}`}>{t.label}</span>
+        {/* Trail quality */}
+        <div className="mb-5">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[10.5px] text-stone-400 uppercase tracking-[0.12em]">Trail quality</span>
+            <span className={`text-[12px] font-medium ${t.color}`}>{t.label}</span>
           </div>
-          <div className="h-1.5 rounded-full bg-stone-200">
+          <div className="h-[3px] rounded-full bg-stone-100">
             <div className={`h-full rounded-full transition-all ${t.bar} ${t.w}`} />
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="pt-3 border-t border-stone-100 text-[10.5px] text-stone-400">
+        <div className="text-[11px] text-stone-400">
           Updated {new Date(item.fetchedAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
         </div>
       </div>
@@ -157,20 +116,15 @@ function ConditionCard({ item }) {
 
 /* ── Status pill ───────────────────────────────────────────────── */
 function StatusPill({ status, count, active, onClick }) {
-  const activeMap = {
-    All:     "bg-stone-800 text-white border-stone-800",
-    Open:    "bg-emerald-600 text-white border-emerald-600",
-    Caution: "bg-amber-500 text-white border-amber-500",
-    Closed:  "bg-red-600 text-white border-red-600",
-  };
   return (
     <button
       onClick={onClick}
-      className={`flex items-center gap-1.5 px-3.5 py-[7px] rounded-xl border text-[13px] font-medium transition-all
-        ${active ? activeMap[status] : "bg-white text-stone-600 border-stone-200 hover:border-stone-300 hover:bg-stone-50"}`}
+      className={`flex items-center gap-1.5 px-3 py-1.5 text-[13px] transition-colors ${
+        active ? "text-stone-900 font-medium border-b border-stone-900" : "text-stone-500 hover:text-stone-900 border-b border-transparent"
+      }`}
     >
       {status}
-      <span className={`text-[11px] font-semibold px-1.5 rounded-full ${active ? "bg-white/20" : "bg-stone-100 text-stone-500"}`}>
+      <span className={`text-[11px] tabular-nums ${active ? "text-stone-500" : "text-stone-400"}`}>
         {count ?? 0}
       </span>
     </button>
@@ -230,36 +184,32 @@ export default function Conditions() {
   };
 
   return (
-    <div className="min-h-screen bg-stone-50 font-sans text-stone-900">
+    <div className="min-h-screen bg-white font-sans text-stone-900">
       <Navbar />
 
       {/* ── Page header ── */}
-      <div className="pt-[66px] bg-white border-b border-stone-200">
-        <div className="max-w-[1200px] mx-auto px-5 sm:px-8 py-10 sm:py-12">
-          <span className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.22em] text-forest-500 font-semibold mb-3">
-            <span className="w-5 h-px bg-forest-300" />
-            Live · Real-time
-          </span>
-          <h1 className="font-serif text-[2.2rem] sm:text-[2.8rem] font-bold text-stone-900 leading-tight mb-3">
-            Trail <span className="italic text-forest-500">Conditions</span>
+      <div className="pt-[66px] border-b border-stone-100">
+        <div className="max-w-[1200px] mx-auto px-5 sm:px-8 py-12 sm:py-16">
+          <h1 className="text-[2.5rem] sm:text-[3rem] font-medium text-stone-900 leading-tight tracking-tight mb-3">
+            Trail conditions
           </h1>
-          <p className="text-[15px] text-stone-500 max-w-[520px] leading-relaxed mb-6">
-            Real-time weather across all {conditions.length || 46} Nepal trekking destinations — temperature, precipitation, wind and trail accessibility updated live.
+          <p className="text-[15px] text-stone-500 max-w-[560px] leading-relaxed mb-8">
+            Real-time weather across {conditions.length || 46} Nepal trekking destinations — temperature, precipitation, wind and trail accessibility updated live.
           </p>
 
           {!loading && !error && (
-            <div className="flex flex-wrap gap-2">
-              <span className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-full text-[12px] font-medium">
+            <div className="flex flex-wrap gap-6 text-[13px]">
+              <span className="flex items-center gap-2 text-stone-600">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> {counts.open} open
               </span>
-              <span className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 border border-amber-200 text-amber-700 rounded-full text-[12px] font-medium">
+              <span className="flex items-center gap-2 text-stone-600">
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-500" /> {counts.caution} caution
               </span>
-              <span className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 border border-red-200 text-red-700 rounded-full text-[12px] font-medium">
+              <span className="flex items-center gap-2 text-stone-600">
                 <span className="w-1.5 h-1.5 rounded-full bg-red-500" /> {counts.closed} closed
               </span>
               {fetchedAt && (
-                <span className="flex items-center gap-1.5 px-3 py-1.5 bg-stone-100 border border-stone-200 text-stone-500 rounded-full text-[12px]">
+                <span className="text-stone-400">
                   Fetched {new Date(fetchedAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
                 </span>
               )}
@@ -269,10 +219,10 @@ export default function Conditions() {
       </div>
 
       {/* ── Filter bar ── */}
-      <div className="sticky top-[66px] z-40 bg-white border-b border-stone-200 shadow-sm">
-        <div className="max-w-[1200px] mx-auto px-5 sm:px-8 py-3 flex flex-wrap gap-2 items-center">
-          {/* Status pills */}
-          <div className="flex items-center gap-1.5 flex-wrap">
+      <div className="sticky top-[66px] z-40 bg-white border-b border-stone-100">
+        <div className="max-w-[1200px] mx-auto px-5 sm:px-8 py-3 flex flex-wrap gap-3 items-center">
+          {/* Status tabs */}
+          <div className="flex items-center">
             {STATUSES.map((s) => (
               <StatusPill
                 key={s} status={s}
@@ -283,13 +233,13 @@ export default function Conditions() {
             ))}
           </div>
 
-          <div className="hidden sm:block w-px h-6 bg-stone-200 mx-1" />
+          <div className="hidden sm:block w-px h-5 bg-stone-100 mx-1" />
 
           {/* Region */}
           <select
             value={regionFilter}
             onChange={(e) => setRegionFilter(e.target.value)}
-            className="bg-stone-50 border border-stone-200 rounded-xl px-3 py-[7px] text-[13px] text-stone-700 outline-none cursor-pointer hover:border-stone-300 transition-colors"
+            className="bg-white border-b border-stone-200 px-1 py-1.5 text-[13px] text-stone-700 outline-none cursor-pointer hover:border-stone-400 transition-colors"
           >
             {regions.length > 0
               ? regions.map((r) => <option key={r} value={r}>{r}</option>)
@@ -297,8 +247,8 @@ export default function Conditions() {
           </select>
 
           {/* Search */}
-          <div className="ml-auto flex items-center gap-2 bg-stone-50 border border-stone-200 rounded-xl px-3 py-[7px] min-w-[180px] max-w-[240px] focus-within:border-forest-300 focus-within:ring-2 focus-within:ring-forest-100 transition-all">
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-stone-400 shrink-0">
+          <div className="ml-auto flex items-center gap-2 border-b border-stone-200 px-1 py-1.5 min-w-[180px] max-w-[240px] focus-within:border-forest-600 transition-colors">
+            <svg width="13" height="13" viewBox="0 0 14 14" fill="none" className="text-stone-400 shrink-0">
               <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.4" />
               <path d="M10 10l2.5 2.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
             </svg>
@@ -313,7 +263,7 @@ export default function Conditions() {
           {/* Refresh */}
           <button
             onClick={load} disabled={loading}
-            className="flex items-center gap-1.5 px-3 py-[7px] rounded-xl border border-stone-200 text-[13px] text-stone-600 hover:border-forest-300 hover:text-forest-600 hover:bg-forest-50 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex items-center gap-1.5 px-2 py-1.5 text-[13px] text-stone-600 hover:text-forest-600 transition-colors disabled:opacity-40"
           >
             <svg width="13" height="13" viewBox="0 0 14 14" fill="none" className={loading ? "animate-spin" : ""}>
               <path d="M13 7A6 6 0 1 1 7 1a6 6 0 0 1 4.243 1.757L13 1v4H9l1.5-1.5A4 4 0 1 0 11 7" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
@@ -324,22 +274,16 @@ export default function Conditions() {
       </div>
 
       {/* ── Content ── */}
-      <div className="max-w-[1200px] mx-auto px-5 sm:px-8 py-8 sm:py-10">
+      <div className="max-w-[1200px] mx-auto px-5 sm:px-8 py-10">
 
         {/* Error */}
         {error && (
-          <div className="mb-8 p-5 bg-red-50 border border-red-200 rounded-2xl flex items-start gap-4">
-            <div className="w-9 h-9 rounded-xl bg-red-100 border border-red-200 flex items-center justify-center text-red-500 shrink-0">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.4" />
-                <path d="M8 5v3.5M8 11v.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-              </svg>
-            </div>
+          <div className="mb-8 p-5 border border-red-100 rounded-lg flex items-center gap-4">
             <div className="flex-1">
-              <p className="text-[14px] font-semibold text-red-800 mb-0.5">Weather data unavailable</p>
-              <p className="text-[13px] text-red-600">{error}</p>
+              <p className="text-[14px] font-medium text-red-700 mb-0.5">Weather data unavailable</p>
+              <p className="text-[12.5px] text-red-500">{error}</p>
             </div>
-            <button onClick={load} className="text-[13px] text-red-600 hover:text-red-800 font-medium border border-red-200 px-3 py-1.5 rounded-lg hover:bg-red-100 transition-all">
+            <button onClick={load} className="text-[13px] text-red-600 hover:text-red-700 font-medium">
               Retry
             </button>
           </div>
@@ -372,14 +316,8 @@ export default function Conditions() {
             </div>
 
             {filtered.length === 0 ? (
-              <div className="text-center py-20">
-                <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-stone-100 border border-stone-200 flex items-center justify-center">
-                  <svg width="26" height="26" viewBox="0 0 28 28" fill="none" className="text-stone-400">
-                    <circle cx="14" cy="14" r="11" stroke="currentColor" strokeWidth="1.5" />
-                    <path d="M10 10l8 8M18 10l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" opacity="0.5" />
-                  </svg>
-                </div>
-                <p className="text-stone-500 text-[15px] mb-3">No locations match your filters.</p>
+              <div className="text-center py-24 border-y border-stone-100">
+                <p className="text-stone-600 text-[14px] mb-2">No locations match your filters.</p>
                 <button
                   onClick={() => { setSearch(""); setStatusFilter("All"); setRegionFilter("All Regions"); }}
                   className="text-[13px] text-forest-600 hover:text-forest-700 font-medium"
@@ -399,9 +337,9 @@ export default function Conditions() {
       </div>
 
       {/* ── Footer ── */}
-      <div className="border-t border-stone-200 bg-white py-6 text-center text-[12.5px] text-stone-400">
+      <div className="border-t border-stone-100 py-6 text-center text-[12.5px] text-stone-400">
         Weather via{" "}
-        <a href="https://open-meteo.com" target="_blank" rel="noreferrer" className="text-forest-500 hover:underline">
+        <a href="https://open-meteo.com" target="_blank" rel="noreferrer" className="text-forest-600 hover:underline">
           Open-Meteo
         </a>
         {" "}· Cached 5 min · Advisory only · Verify with your guide before departure

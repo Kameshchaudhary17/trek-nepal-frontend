@@ -5,13 +5,6 @@ import { treksService } from "../services/api";
 import { DIFFICULTY_LEVELS, REGIONS, DURATIONS } from "../data/treks.js";
 
 /* ── Helpers ──────────────────────────────────────────────────── */
-const DIFF_BADGE = {
-  "Easy":           "bg-emerald-50 text-emerald-700 border-emerald-200",
-  "Moderate":       "bg-sky-50 text-sky-700 border-sky-200",
-  "Moderate–Hard":  "bg-amber-50 text-amber-700 border-amber-200",
-  "Hard":           "bg-red-50 text-red-700 border-red-200",
-};
-
 const SORT_OPTIONS = [
   { value: "popular",  label: "Most Popular" },
   { value: "price",    label: "Price: low → high" },
@@ -23,12 +16,16 @@ function totalPermitCost(permits) {
   return permits.reduce((s, p) => s + p.cost, 0);
 }
 
+const TREK_PHOTOS = {
+  "Everest Base Camp": "/image/everest-base-camp.png",
+};
+
 /* ── Sub-components ───────────────────────────────────────────── */
 function StatBox({ label, value }) {
   return (
-    <div className="text-center">
-      <div className="text-[10px] uppercase tracking-wide text-stone-400 mb-0.5">{label}</div>
-      <div className="text-[12.5px] font-semibold text-stone-700 leading-tight">{value}</div>
+    <div>
+      <div className="text-[10px] uppercase tracking-[0.12em] text-stone-400 mb-0.5">{label}</div>
+      <div className="text-[13px] font-medium text-stone-900 leading-tight tabular-nums">{value}</div>
     </div>
   );
 }
@@ -36,112 +33,88 @@ function StatBox({ label, value }) {
 function TrekCard({ trek }) {
   const [permitOpen, setPermitOpen] = useState(false);
   const permitTotal = totalPermitCost(trek.permits);
-  const diffClass = DIFF_BADGE[trek.difficulty] ?? DIFF_BADGE["Moderate"];
+  const photo = trek.photo || TREK_PHOTOS[trek.name];
 
   return (
-    <div className="group bg-white border border-stone-200 rounded-2xl overflow-hidden hover:border-stone-300 hover:shadow-xl transition-all hover:-translate-y-1 flex flex-col">
-      {/* Trek photo or colour accent */}
-      {trek.photo ? (
-        <div className="h-36 w-full shrink-0 overflow-hidden">
-          <img src={trek.photo} alt={trek.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-        </div>
-      ) : (
-        <div className="h-1.5 w-full shrink-0" style={{ background: `linear-gradient(90deg, ${trek.color}, ${trek.color}70)` }} />
+    <div
+      className="group relative bg-white border border-stone-100 rounded-xl overflow-hidden hover:border-stone-300 transition-colors flex flex-col"
+      style={photo ? { backgroundImage: `url(${photo})`, backgroundSize: 'cover', backgroundPosition: 'center' } : undefined}
+    >
+      {photo && (
+        <>
+          <div className="absolute inset-0 bg-white/85 backdrop-blur-[2px] transition-opacity duration-300 group-hover:opacity-0" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/15 opacity-0 transition-opacity duration-300 group-hover:opacity-100 pointer-events-none" />
+        </>
       )}
 
-      <div className="p-5 flex flex-col flex-1">
-        {/* Header */}
-        <div className="flex items-start justify-between gap-3 mb-3">
-          <div className="flex-1 min-w-0">
-            <div className="flex flex-wrap items-center gap-1.5 mb-1">
-              <span className={`text-[10.5px] px-2 py-[2px] rounded-full border font-semibold ${diffClass}`}>
-                {trek.difficulty}
-              </span>
-              {trek.restricted && (
-                <span className="text-[10.5px] px-2 py-[2px] rounded-full border font-semibold bg-rose-50 text-rose-700 border-rose-200">
-                  Restricted
-                </span>
-              )}
-            </div>
-            <h3 className="font-serif text-[1.05rem] font-bold text-stone-900 leading-snug mb-0.5">
-              {trek.name}
-            </h3>
-            <p className="text-[11.5px] text-stone-400">{trek.region} Province</p>
-          </div>
-          <div className="shrink-0 text-right">
-            <div className="text-[10px] text-stone-400 mb-0.5">Guide from</div>
-            <div className="text-[1.1rem] font-bold text-forest-600">${trek.guideFrom}</div>
-            <div className="text-[10px] text-stone-400">/ person</div>
-          </div>
+      <div className={`relative p-6 flex flex-col flex-1 transition-colors duration-300 ${photo ? "group-hover:[&_*:not(svg)]:!text-white group-hover:[&_.border-stone-100]:!border-white/25" : ""}`}>
+        {/* Meta line */}
+        <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.14em] text-stone-400 mb-2">
+          <span>{trek.difficulty}</span>
+          {trek.restricted && (<><span className="text-stone-300">·</span><span>Restricted</span></>)}
+          <span className="text-stone-300">·</span>
+          <span className="normal-case tracking-normal">{trek.region}</span>
         </div>
 
-        {/* Tags */}
-        <div className="flex flex-wrap gap-1 mb-3">
-          {trek.tags.map((t) => (
-            <span key={t} className="text-[10.5px] px-2 py-[2px] rounded-full bg-stone-100 text-stone-500 border border-stone-200">
-              {t}
-            </span>
-          ))}
+        {/* Header */}
+        <div className="flex items-start justify-between gap-4 mb-5">
+          <h3 className="text-[1.15rem] font-medium text-stone-900 leading-snug">{trek.name}</h3>
+          <div className="shrink-0 text-right">
+            <div className="text-[1rem] font-medium text-stone-900 tabular-nums leading-none">${trek.guideFrom}</div>
+            <div className="text-[10.5px] text-stone-400 mt-1">from / person</div>
+          </div>
         </div>
 
         {/* Stats row */}
-        <div className="grid grid-cols-3 gap-2 mb-4 p-3 rounded-xl bg-stone-50 border border-stone-100">
+        <div className="grid grid-cols-3 gap-4 py-4 border-y border-stone-100 mb-5">
           <StatBox label="Duration" value={`${trek.minDays}–${trek.maxDays}d`} />
-          <StatBox label="Max Alt." value={trek.altitude} />
+          <StatBox label="Max alt." value={trek.altitude} />
           <StatBox label="Best" value={trek.bestMonths} />
         </div>
 
         {/* Description */}
-        <p className="text-[13px] text-stone-500 leading-relaxed mb-4 flex-1">
-          {trek.desc}
-        </p>
+        <p className="text-[13px] text-stone-500 leading-relaxed mb-5 flex-1">{trek.desc}</p>
 
         {/* Highlights */}
-        <ul className="mb-4 space-y-1.5">
+        <ul className="mb-5 space-y-1.5">
           {trek.highlights.map((h) => (
-            <li key={h} className="flex items-start gap-2 text-[12.5px] text-stone-600">
-              <span className="mt-[3px] w-3.5 h-3.5 rounded-full bg-forest-100 border border-forest-200 flex items-center justify-center shrink-0">
-                <svg width="7" height="7" viewBox="0 0 8 8" fill="none">
-                  <path d="M1.5 4l2 2 3-3" stroke="#2D6A4F" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </span>
+            <li key={h} className="flex items-start gap-2.5 text-[12.5px] text-stone-600">
+              <span className="mt-[7px] w-1 h-1 rounded-full bg-stone-400 shrink-0" />
               {h}
             </li>
           ))}
         </ul>
 
-        {/* Permit accordion */}
-        <div className="mb-4 rounded-xl border border-stone-200 overflow-hidden">
+        {/* Tags */}
+        {trek.tags?.length > 0 && (
+          <div className="text-[11.5px] text-stone-400 mb-5">
+            {trek.tags.join(" · ")}
+          </div>
+        )}
+
+        {/* Permit disclosure */}
+        <div className="mb-5">
           <button
             onClick={() => setPermitOpen(!permitOpen)}
-            className="w-full flex items-center justify-between px-3.5 py-2.5 bg-stone-50 hover:bg-stone-100 transition-colors text-left"
+            className="w-full flex items-center justify-between py-2 text-left text-[12.5px] text-stone-600 hover:text-stone-900 transition-colors"
           >
-            <div className="flex items-center gap-2">
-              <svg width="13" height="13" viewBox="0 0 14 14" fill="none" className="text-stone-400">
-                <rect x="2" y="4" width="10" height="8" rx="1.5" stroke="currentColor" strokeWidth="1.3" />
-                <path d="M5 4V3a2 2 0 0 1 4 0v1" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
-                <circle cx="7" cy="8" r="1" fill="currentColor" />
-              </svg>
-              <span className="text-[12px] font-semibold text-stone-700">
-                {trek.permits.length} permit{trek.permits.length > 1 ? "s" : ""} required
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-[12px] font-bold text-terra-500">${permitTotal} total</span>
-              <svg
-                width="12" height="12" viewBox="0 0 12 12" fill="none"
-                className={`text-stone-400 transition-transform ${permitOpen ? "rotate-180" : ""}`}
-              >
-                <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </div>
+            <span>
+              {trek.permits.length} permit{trek.permits.length > 1 ? "s" : ""} required
+              <span className="text-stone-400"> · ${permitTotal} total</span>
+            </span>
+            <svg
+              width="11" height="11" viewBox="0 0 12 12" fill="none"
+              className={`text-stone-400 transition-transform ${permitOpen ? "rotate-180" : ""}`}
+            >
+              <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
           </button>
           {permitOpen && (
-            <div className="px-3.5 py-2.5 space-y-2 bg-white">
+            <div className="pt-1 pb-1 space-y-1">
               {trek.permits.map((p) => (
                 <div key={p.name} className="flex items-center justify-between text-[12px]">
-                  <span className="text-stone-600">{p.name}</span>
-                  <span className="font-semibold text-stone-800">${p.cost}</span>
+                  <span className="text-stone-500">{p.name}</span>
+                  <span className="text-stone-700 tabular-nums">${p.cost}</span>
                 </div>
               ))}
             </div>
@@ -149,20 +122,19 @@ function TrekCard({ trek }) {
         </div>
 
         {/* Season */}
-        <div className="flex items-center gap-2 text-[12px] text-stone-500 mb-5">
-          <svg width="13" height="13" viewBox="0 0 14 14" fill="none" className="text-forest-400 shrink-0">
-            <rect x="2" y="3" width="10" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.3" />
-            <path d="M2 6h10M5 1v2M9 1v2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
-          </svg>
-          <span><span className="font-medium text-stone-700">Best season:</span> {trek.season}</span>
+        <div className="text-[12px] text-stone-500 mb-6">
+          <span className="text-stone-400">Season </span>{trek.season}
         </div>
 
         {/* CTA */}
         <Link
           to={`/guides?trek=${encodeURIComponent(trek.name)}&region=${encodeURIComponent(trek.region)}`}
-          className="block w-full text-center py-[10px] rounded-xl bg-forest-500 text-white text-[13.5px] font-semibold hover:bg-forest-600 hover:shadow-md transition-all"
+          className="inline-flex items-center gap-1.5 text-[13px] font-medium text-forest-600 hover:text-forest-700 transition-colors group/cta"
         >
-          Find guides for this trek →
+          Find guides
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="transition-transform group-hover/cta:translate-x-0.5">
+            <path d="M2 6h8M6 2l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
         </Link>
       </div>
     </div>

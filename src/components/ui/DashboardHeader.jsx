@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 
 export default function DashboardHeader({ title }) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [imgErr,       setImgErr]       = useState(false);
   const dropdownRef = useRef(null);
   const navigate    = useNavigate();
 
@@ -30,7 +31,7 @@ export default function DashboardHeader({ title }) {
   }, [dropdownOpen]);
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 h-[68px] bg-white border-b border-stone-200 flex items-center justify-between px-5 sm:px-8">
+    <header className="fixed top-0 left-0 right-0 z-50 h-[68px] bg-white border-b border-stone-100 flex items-center justify-between px-5 sm:px-8">
       {/* Logo */}
       <Link to="/" className="flex items-center gap-2.5 shrink-0">
         <span className="text-forest-500">
@@ -54,12 +55,18 @@ export default function DashboardHeader({ title }) {
       <div className="relative" ref={dropdownRef}>
         <button
           onClick={() => setDropdownOpen((v) => !v)}
-          className="flex items-center gap-2.5 pl-1.5 pr-3 py-1.5 rounded-xl border border-stone-200 hover:border-stone-300 hover:bg-stone-50 transition-all"
+          className="flex items-center gap-2.5 pl-1 pr-2 py-1 rounded-lg hover:bg-stone-50 transition-colors"
         >
-          {userData?.profilePhoto ? (
-            <img src={userData.profilePhoto} alt={userName} className="w-7 h-7 rounded-lg object-cover shrink-0" />
+          {userData?.profilePhoto && !imgErr ? (
+            <img
+              src={userData.profilePhoto}
+              alt={userName}
+              referrerPolicy="no-referrer"
+              onError={() => setImgErr(true)}
+              className="w-7 h-7 rounded-full object-cover shrink-0"
+            />
           ) : (
-            <div className="w-7 h-7 rounded-lg bg-forest-500 flex items-center justify-center text-white font-serif font-bold text-[11px] shrink-0">
+            <div className="w-7 h-7 rounded-full bg-forest-500 flex items-center justify-center text-white font-medium text-[11px] shrink-0">
               {initials}
             </div>
           )}
