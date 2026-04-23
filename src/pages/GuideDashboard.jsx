@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import SidebarAvatarMenu from "../components/ui/SidebarAvatarMenu";
 import ImageUpload from "../components/ui/ImageUpload";
 import authService, { guideService, pricingService, bookingService } from "../services/api";
+import { formatNPR } from "../utils/money";
 
 /* ── Sidebar nav items ───────────────────────────────────────────── */
 const NAV = [
@@ -10,6 +11,8 @@ const NAV = [
   { id: "profile",   label: "My Profile", icon: ProfileIcon   },
   { id: "rate",      label: "My Rate",    icon: RateIcon      },
   { id: "bookings",  label: "Bookings",   icon: BookingsIcon  },
+  { id: "reviews",   label: "Reviews",    icon: ReviewsIcon   },
+  { id: "earnings",  label: "Earnings",   icon: EarningsIcon  },
 ];
 
 const LANGUAGES_OPTIONS = ["English", "Nepali", "Hindi", "Tibetan", "French", "German", "Spanish", "Japanese", "Chinese", "Korean"];
@@ -151,7 +154,7 @@ export default function GuideDashboard() {
     const tier = pricing?.guideTiers?.find((t) => t.id === selectedTier);
     if (!tier) return;
     if (isNaN(rate) || rate < tier.ratePerDay.min || rate > tier.ratePerDay.max) {
-      showToast(`Rate must be $${tier.ratePerDay.min}–$${tier.ratePerDay.max} for this tier.`, "error");
+      showToast(`Rate must be ${formatNPR(tier.ratePerDay.min)}–${formatNPR(tier.ratePerDay.max)} for this tier.`, "error");
       return;
     }
     setRateSaving(true);
@@ -170,12 +173,10 @@ export default function GuideDashboard() {
 
   const initials = user.fullName?.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase() || "?";
   const isVerified = guide?.status === "verified";
-  const isPending  = !guide || guide.status === "pending";
   const isRejected = guide?.status === "rejected";
 
-  function handleLogout() {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
+  async function handleLogout() {
+    await authService.logout();
     navigate("/");
   }
 
@@ -230,7 +231,7 @@ export default function GuideDashboard() {
                     setUser(merged);
                   }
                   if (profileForm) updateForm("profilePhoto", url);
-                } catch {}
+                } catch { /* silently ignore — photo upload is non-critical */ }
               }}
             />
             {/* Verification badge */}
@@ -273,7 +274,7 @@ export default function GuideDashboard() {
             <div className="bg-stone-50 border border-stone-200 rounded-xl p-3">
               <p className="text-[11px] text-stone-600 font-medium mb-0.5">Daily rate</p>
               <p className="text-[1.1rem] font-serif font-bold text-terra-500">
-                {guide?.ratePerDay ? `$${guide.ratePerDay}/day` : "Not set"}
+                {guide?.ratePerDay ? `${formatNPR(guide.ratePerDay)}/day` : "Not set"}
               </p>
             </div>
             <button
@@ -312,6 +313,8 @@ export default function GuideDashboard() {
             {activeTab === "profile"   && profileForm && <ProfileTab form={profileForm} updateForm={updateForm} toggleLanguage={toggleLanguage} onSave={saveProfile} saving={profileSaving} hasNationalId={!!guide?.nationalIdPublicId} userEmail={user.email} />}
             {activeTab === "rate"      && pricing && <RateTab guide={guide} pricing={pricing} selectedTier={selectedTier} setSelectedTier={setSelectedTier} rateInput={rateInput} setRateInput={setRateInput} onSave={saveRate} saving={rateSaving} />}
             {activeTab === "bookings"  && <BookingsTab />}
+            {activeTab === "reviews"   && <ReviewsTab />}
+            {activeTab === "earnings"  && <EarningsTab />}
           </div>
         </main>
     </div>
@@ -327,7 +330,7 @@ function OverviewTab({ user, guide, setActiveTab }) {
     { label: "Booking requests", value: "0",  sub: "Active requests" },
     { label: "Treks completed",  value: guide?.treksCompleted ?? "0", sub: "All time" },
     { label: "Average rating",   value: guide?.averageRating ? `${guide.averageRating.toFixed(1)} ★` : "—", sub: `${guide?.reviewCount ?? 0} reviews` },
-    { label: "Daily rate",       value: guide?.ratePerDay ? `$${guide.ratePerDay}` : "—", sub: "Per day" },
+    { label: "Daily rate",       value: guide?.ratePerDay ? formatNPR(guide.ratePerDay) : "—", sub: "Per day" },
   ];
 
   return (
@@ -687,7 +690,7 @@ function RateTab({ guide, pricing, selectedTier, setSelectedTier, rateInput, set
         <div className="flex items-center justify-between bg-forest-50 border border-forest-200 rounded-2xl p-5 mb-6">
           <div>
             <div className="text-[11.5px] uppercase tracking-[0.12em] text-forest-600 font-semibold mb-0.5">Current rate</div>
-            <div className="font-serif text-[2rem] font-bold text-forest-700">${guide.ratePerDay}<span className="text-[14px] font-normal text-forest-500 ml-1">/day</span></div>
+            <div className="font-serif text-[2rem] font-bold text-forest-700">{formatNPR(guide.ratePerDay)}<span className="text-[14px] font-normal text-forest-500 ml-1">/day</span></div>
           </div>
           <svg width="28" height="28" viewBox="0 0 28 28" fill="none" className="text-forest-300">
             <path d="M14 3v22M9 7h7.5a3.5 3.5 0 010 7H9M9 14h8a3.5 3.5 0 010 7H9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
@@ -719,7 +722,7 @@ function RateTab({ guide, pricing, selectedTier, setSelectedTier, rateInput, set
               <div className="flex-1">
                 <div className="flex items-center justify-between flex-wrap gap-1">
                   <span className={`text-[13.5px] font-semibold ${selectedTier === t.id ? "text-forest-800" : "text-stone-700"}`}>{t.label}</span>
-                  <span className="text-[13px] font-semibold text-terra-500">${t.ratePerDay.min}–${t.ratePerDay.max}<span className="text-stone-400 font-normal text-[11px]">/day</span></span>
+                  <span className="text-[13px] font-semibold text-terra-500">{formatNPR(t.ratePerDay.min)}–{formatNPR(t.ratePerDay.max)}<span className="text-stone-400 font-normal text-[11px]">/day</span></span>
                 </div>
                 <span className="text-[12px] text-stone-400">{t.desc}</span>
               </div>
@@ -732,18 +735,18 @@ function RateTab({ guide, pricing, selectedTier, setSelectedTier, rateInput, set
       {tier && (
         <div className="mb-6">
           <label className="block text-[11.5px] uppercase tracking-[0.12em] text-stone-500 font-semibold mb-2">
-            Your Daily Rate — must be ${tier.ratePerDay.min}–${tier.ratePerDay.max}
+            Your Daily Rate — must be {formatNPR(tier.ratePerDay.min)}–{formatNPR(tier.ratePerDay.max)}
           </label>
           <div className="flex items-center gap-3">
             <div className="relative">
-              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400 text-[15px] font-semibold pointer-events-none">$</span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 text-[12.5px] font-semibold pointer-events-none">Rs.</span>
               <input
                 type="number"
                 min={tier.ratePerDay.min}
                 max={tier.ratePerDay.max}
                 value={rateInput}
                 onChange={(e) => setRateInput(e.target.value)}
-                className={`pl-7 pr-16 py-3 text-[1rem] font-semibold rounded-xl border outline-none w-36 transition-colors ${
+                className={`pl-12 pr-16 py-3 text-[1rem] font-semibold rounded-xl border outline-none w-44 transition-colors ${
                   !rateInput ? "border-stone-200 bg-stone-50" : inBand ? "border-forest-300 bg-forest-50 text-forest-700" : "border-red-300 bg-red-50 text-red-700"
                 }`}
               />
@@ -751,7 +754,7 @@ function RateTab({ guide, pricing, selectedTier, setSelectedTier, rateInput, set
             </div>
             {rateInput && (
               <span className={`text-[12.5px] font-medium ${inBand ? "text-forest-600" : "text-red-500"}`}>
-                {inBand ? "Within band ✓" : `Must be $${tier.ratePerDay.min}–$${tier.ratePerDay.max}`}
+                {inBand ? "Within band ✓" : `Must be ${formatNPR(tier.ratePerDay.min)}–${formatNPR(tier.ratePerDay.max)}`}
               </span>
             )}
           </div>
@@ -759,11 +762,11 @@ function RateTab({ guide, pricing, selectedTier, setSelectedTier, rateInput, set
           {/* Visual band slider */}
           <div className="mt-4 bg-stone-50 border border-stone-200 rounded-xl p-4">
             <div className="flex justify-between text-[11px] text-stone-400 mb-2">
-              <span>${tier.ratePerDay.min}</span>
+              <span>{formatNPR(tier.ratePerDay.min)}</span>
               <span className="text-forest-600 font-semibold">
-                {inBand ? `$${rate}/day set` : "set a rate"}
+                {inBand ? `${formatNPR(rate)}/day set` : "set a rate"}
               </span>
-              <span>${tier.ratePerDay.max}</span>
+              <span>{formatNPR(tier.ratePerDay.max)}</span>
             </div>
             <div className="relative h-2 bg-stone-200 rounded-full overflow-hidden">
               <div className="absolute inset-y-0 left-0 rounded-full" style={{ background: tier.color, width: "100%" }} />
@@ -1114,6 +1117,7 @@ function BookingsTab() {
 /* ── Shared components ──────────────────────────────────────────── */
 const inputCls = "w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 text-[14px] text-stone-800 outline-none focus:border-forest-400 focus:ring-2 focus:ring-forest-100 transition-colors";
 
+// eslint-disable-next-line no-unused-vars -- kept for future form sections
 function Field({ label, hint, children }) {
   return (
     <div>
@@ -1159,5 +1163,180 @@ function BookingsIcon({ active }) {
       <rect x="2" y="3" width="12" height="11" rx="1.5" stroke={active ? "#2D6A4F" : "currentColor"} strokeWidth="1.3" />
       <path d="M5 1v4M11 1v4M2 7h12" stroke={active ? "#2D6A4F" : "currentColor"} strokeWidth="1.3" strokeLinecap="round" />
     </svg>
+  );
+}
+
+function ReviewsIcon({ active }) {
+  const c = active ? "#2D6A4F" : "currentColor";
+  return (
+    <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
+      <path d="M8 1.8l1.75 3.55 3.92.57-2.84 2.77.67 3.9L8 10.77l-3.5 1.82.67-3.9L2.33 5.92l3.92-.57L8 1.8z" stroke={c} strokeWidth="1.2" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function EarningsIcon({ active }) {
+  const c = active ? "#2D6A4F" : "currentColor";
+  return (
+    <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
+      <circle cx="8" cy="8" r="6.5" stroke={c} strokeWidth="1.3" />
+      <path d="M8 4.5v7M10 6.25c-.33-.67-1-1-2-1s-1.67.33-2 1 .67 1 2 1 2 .33 2 1-1 1-2 1-1.67-.33-2-1" stroke={c} strokeWidth="1.2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+/* ── Reviews tab ─────────────────────────────────────────────────── */
+function ReviewsTab() {
+  const [reviews, setReviews] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [avg, setAvg] = useState(0);
+
+  useEffect(() => {
+    guideService.getMyReviews()
+      .then((data) => {
+        const list = data.reviews || [];
+        setReviews(list);
+        if (list.length) {
+          const sum = list.reduce((a, r) => a + (r.rating || 0), 0);
+          setAvg(Math.round((sum / list.length) * 10) / 10);
+        }
+      })
+      .catch(() => setReviews([]))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="space-y-3">
+        {[1, 2, 3].map((n) => (
+          <div key={n} className="bg-white border border-stone-200 rounded-2xl p-5 animate-pulse h-24" />
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div className="mb-6">
+        <h2 className="font-serif text-[1.6rem] font-bold text-stone-900">Reviews</h2>
+        <p className="text-[13px] text-stone-400 mt-1">
+          {reviews.length > 0 ? `${avg.toFixed(1)} ★ average · ${reviews.length} ${reviews.length === 1 ? "review" : "reviews"}` : "No reviews yet."}
+        </p>
+      </div>
+
+      {reviews.length === 0 ? (
+        <div className="bg-white border border-stone-200 rounded-2xl p-10 text-center">
+          <p className="text-[14px] text-stone-500">Once a trekker completes a trek with you and leaves feedback, it'll appear here.</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {reviews.map((r) => (
+            <div key={r._id} className="bg-white border border-stone-200 rounded-2xl p-5">
+              <div className="flex items-start justify-between gap-4 mb-2">
+                <div className="flex items-center gap-3">
+                  {r.trekker?.profilePhoto ? (
+                    <img src={r.trekker.profilePhoto} alt={r.trekker.fullName} className="w-9 h-9 rounded-full object-cover" />
+                  ) : (
+                    <div className="w-9 h-9 rounded-full bg-stone-100 border border-stone-200 flex items-center justify-center text-[11px] font-semibold text-stone-500">
+                      {(r.trekker?.fullName || "T").split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase()}
+                    </div>
+                  )}
+                  <div>
+                    <div className="text-[13.5px] font-semibold text-stone-800">{r.trekker?.fullName || "Trekker"}</div>
+                    <div className="text-[11.5px] text-stone-400">{new Date(r.createdAt).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</div>
+                  </div>
+                </div>
+                <span className="shrink-0 text-[13px] font-semibold text-terra-500" style={{ color: "#e0b874" }}>
+                  {"★".repeat(r.rating)}
+                  <span className="text-stone-200">{"★".repeat(5 - r.rating)}</span>
+                </span>
+              </div>
+              {r.comment && (
+                <p className="text-[13.5px] text-stone-700 leading-relaxed mt-2 whitespace-pre-wrap">{r.comment}</p>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Earnings tab ────────────────────────────────────────────────── */
+function EarningsTab() {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    guideService.getMyEarnings()
+      .then(setData)
+      .catch(() => setData(null))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <div className="bg-white border border-stone-200 rounded-2xl p-10 animate-pulse h-48" />;
+  if (!data) return <div className="bg-white border border-stone-200 rounded-2xl p-10 text-center text-[14px] text-stone-500">Couldn't load earnings.</div>;
+
+  const { totals, monthly, recent } = data;
+  const cards = [
+    { label: "Total revenue",   value: formatNPR(totals.totalRevenue), sub: `${totals.bookings} paid ${totals.bookings === 1 ? "booking" : "bookings"}`, color: "#2D6A4F" },
+    { label: "Platform fees",   value: formatNPR(totals.platformFees), sub: "Already deducted",               color: "#7c3aed" },
+    { label: "Net earnings",    value: formatNPR(totals.netEarnings),  sub: "Your take-home",                 color: "#16a34a" },
+  ];
+
+  return (
+    <div>
+      <div className="mb-6">
+        <h2 className="font-serif text-[1.6rem] font-bold text-stone-900">Earnings</h2>
+        <p className="text-[13px] text-stone-400 mt-1">All values in NPR. Only paid bookings are counted.</p>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+        {cards.map((c) => (
+          <div key={c.label} className="bg-white border border-stone-200 rounded-2xl p-5">
+            <div className="text-[11px] uppercase tracking-[0.14em] text-stone-400 font-semibold mb-2">{c.label}</div>
+            <div className="font-serif text-[1.5rem] font-bold" style={{ color: c.color }}>{c.value}</div>
+            <div className="text-[12px] text-stone-500 mt-1">{c.sub}</div>
+          </div>
+        ))}
+      </div>
+
+      {monthly.length > 0 && (
+        <div className="bg-white border border-stone-200 rounded-2xl p-5 mb-8">
+          <h3 className="font-serif text-[1rem] font-semibold text-stone-900 mb-3">Monthly breakdown</h3>
+          <div className="space-y-2">
+            {monthly.map((m) => (
+              <div key={`${m.year}-${m.month}`} className="flex items-center justify-between text-[13px]">
+                <span className="text-stone-500">
+                  {new Date(m.year, m.month - 1, 1).toLocaleDateString("en-US", { month: "long", year: "numeric" })}
+                </span>
+                <span className="font-medium text-stone-800 tabular-nums">
+                  {formatNPR(m.revenue)} <span className="text-stone-400 text-[11px] font-normal">· {m.bookings}</span>
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {recent.length > 0 && (
+        <div className="bg-white border border-stone-200 rounded-2xl p-5">
+          <h3 className="font-serif text-[1rem] font-semibold text-stone-900 mb-3">Recent payments</h3>
+          <div className="space-y-3">
+            {recent.map((b) => (
+              <div key={b._id} className="flex items-center justify-between gap-3 text-[13px]">
+                <div className="flex-1 min-w-0">
+                  <div className="text-stone-800 font-medium truncate">{b.route}</div>
+                  <div className="text-[11.5px] text-stone-400 truncate">
+                    {b.trekker?.fullName || "Trekker"} · {b.days} day{b.days === 1 ? "" : "s"} · paid {new Date(b.paidAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                  </div>
+                </div>
+                <span className="font-semibold text-stone-900 tabular-nums shrink-0">{formatNPR(b.totalCost)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

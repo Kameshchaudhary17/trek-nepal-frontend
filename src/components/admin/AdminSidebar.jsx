@@ -1,4 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
+import authService from "../../services/api";
 
 const NAV_ITEMS = [
   { id: "overview", label: "Overview",           icon: OverviewIcon },
@@ -14,9 +15,8 @@ export { NAV_ITEMS };
 export default function AdminSidebar({ activeTab, setActiveTab, pendingCount, sidebarOpen, setSidebarOpen }) {
   const navigate = useNavigate();
 
-  function handleLogout() {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
+  async function handleLogout() {
+    await authService.logout();
     navigate("/");
   }
 

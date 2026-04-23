@@ -1,11 +1,12 @@
 import SectionHeader from "./SectionHeader";
+import { formatNPR } from "../../utils/money";
 
 export default function OverviewSection({ stats, activity, onGoToGuides }) {
   const statCards = [
     { label: "Total Guides",        value: stats.totalGuides,                 icon: "🧭", color: "#2D6A4F", bg: "bg-forest-50 border-forest-200", sub: `${stats.pendingVerification} pending` },
     { label: "Registered Trekkers", value: stats.totalTrekkers,               icon: "🎒", color: "#2563EB", bg: "bg-blue-50 border-blue-200",    sub: "All time" },
     { label: "Total Bookings",      value: stats.totalBookings,               icon: "📋", color: "#16a34a", bg: "bg-green-50 border-green-200",  sub: "Across all routes" },
-    { label: "Platform Revenue",    value: `$${stats.revenue.toLocaleString()}`, icon: "💰", color: "#7c3aed", bg: "bg-violet-50 border-violet-200", sub: "Gross earnings" },
+    { label: "Platform Revenue",    value: formatNPR(stats.revenue),          icon: "💰", color: "#7c3aed", bg: "bg-violet-50 border-violet-200", sub: "Gross earnings" },
   ];
 
   return (

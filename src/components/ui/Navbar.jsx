@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import authService from "../../services/api";
 
 const NAV_LINKS = [
   { label: "Treks",      to: "/treks"      },
@@ -24,9 +25,8 @@ export default function Navbar() {
   const dashboardPath = userRole === "guide" ? "/guide/dashboard" : userRole === "admin" ? "/admin" : "/dashboard";
   const roleLabel     = userRole === "guide" ? "Guide" : userRole === "admin" ? "Admin" : "Trekker";
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
+  const handleLogout = async () => {
+    await authService.logout();
     setDropdownOpen(false);
     setMobileOpen(false);
     navigate("/");

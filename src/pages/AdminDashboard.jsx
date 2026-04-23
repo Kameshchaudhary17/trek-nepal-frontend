@@ -9,31 +9,26 @@ import PricingSection from "../components/admin/PricingSection";
 import SettingsSection from "../components/admin/SettingsSection";
 import TreksSection from "../components/admin/TreksSection";
 
-/* ── Mock data ────────────────────────────────────────────────── */
-const MOCK_STATS = {
-  totalGuides: 24,
-  totalTrekkers: 156,
-  totalBookings: 43,
-  revenue: 12840,
+const EMPTY_STATS = {
+  totalGuides: 0,
+  totalTrekkers: 0,
+  totalBookings: 0,
+  revenue: 0,
+  pendingVerification: 0,
 };
 
-const MOCK_USERS = [
-  { id: "1", name: "Alex Thompson",    email: "alex@gmail.com",      role: "trekker", joinedAt: "Apr 1, 2026",  bookings: 2 },
-  { id: "2", name: "Sofia Müller",     email: "sofia@email.de",      role: "trekker", joinedAt: "Apr 5, 2026",  bookings: 1 },
-  { id: "3", name: "Hiroshi Tanaka",   email: "hiroshi@jp.net",      role: "trekker", joinedAt: "Apr 8, 2026",  bookings: 3 },
-  { id: "4", name: "Emma Wilson",      email: "emma@outlook.com",    role: "trekker", joinedAt: "Apr 12, 2026", bookings: 0 },
-  { id: "5", name: "Kamesh Chaudhary", email: "tbibek180@gmail.com", role: "guide",   joinedAt: "Apr 20, 2026", bookings: 0 },
-  { id: "6", name: "Lucas Ferreira",   email: "lucas@email.br",      role: "trekker", joinedAt: "Apr 3, 2026",  bookings: 1 },
-];
-
-
-const ACTIVITY = [
-  { id: 1, text: "Kamesh Chaudhary registered as a guide",  time: "2 hours ago", icon: "👤" },
-  { id: 2, text: "Alex Thompson booked Everest Base Camp",  time: "5 hours ago", icon: "📋" },
-  { id: 3, text: "Tshering Wangchuk registered as a guide", time: "Yesterday",   icon: "👤" },
-  { id: 4, text: "Nima Dorje was verified by admin",        time: "Apr 18",      icon: "✓"  },
-  { id: 5, text: "Hiroshi Tanaka booked Annapurna Circuit", time: "Apr 17",      icon: "📋" },
-];
+function relativeTime(iso) {
+  if (!iso) return "";
+  const diffMs = Date.now() - new Date(iso).getTime();
+  const mins = Math.round(diffMs / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins} min${mins === 1 ? "" : "s"} ago`;
+  const hours = Math.round(mins / 60);
+  if (hours < 24) return `${hours} hour${hours === 1 ? "" : "s"} ago`;
+  const days = Math.round(hours / 24);
+  if (days < 7) return `${days} day${days === 1 ? "" : "s"} ago`;
+  return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
 
 /* ── Page ─────────────────────────────────────────────────────── */
 export default function AdminDashboard() {
@@ -53,6 +48,10 @@ export default function AdminDashboard() {
   const [trekkers,      setTrekkers]      = useState([]);
   const [trekkersLoading, setTrekkersLoading] = useState(false);
   const [trekkerSearch, setTrekkerSearch] = useState("");
+
+  // Overview stats state
+  const [stats,    setStats]    = useState(EMPTY_STATS);
+  const [activity, setActivity] = useState([]);
 
 
   // Auth guard
@@ -93,6 +92,17 @@ export default function AdminDashboard() {
     adminService.listGuides().then((d) => { if (d.counts) setGuideCounts(d.counts); }).catch(() => {});
   }, []);
 
+  // Fetch overview stats when overview tab is active
+  useEffect(() => {
+    if (activeTab !== "overview") return;
+    adminService.getStats()
+      .then((d) => {
+        if (d.stats) setStats(d.stats);
+        if (d.activity) setActivity(d.activity);
+      })
+      .catch(() => showToast("Failed to load dashboard stats.", "error"));
+  }, [activeTab]);
+
   // Fetch trekkers when tab active or search changes
   const fetchTrekkers = useCallback(async (search = "") => {
     setTrekkersLoading(true);
@@ -108,6 +118,9 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     if (activeTab === "users") fetchTrekkers(trekkerSearch);
+    // trekkerSearch intentionally excluded — handleTrekkerSearch already
+    // invokes fetchTrekkers on every keystroke.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, fetchTrekkers]);
 
   function handleTrekkerSearch(q) {
@@ -205,8 +218,8 @@ export default function AdminDashboard() {
           <div className="px-6 sm:px-10 py-8 w-full">
             {activeTab === "overview" && (
               <OverviewSection
-                stats={{ ...MOCK_STATS, pendingVerification: guideCounts.pending }}
-                activity={ACTIVITY}
+                stats={{ ...stats, pendingVerification: guideCounts.pending }}
+                activity={activity.map((a) => ({ ...a, time: relativeTime(a.time) }))}
                 onGoToGuides={() => setActiveTab("guides")}
               />
             )}

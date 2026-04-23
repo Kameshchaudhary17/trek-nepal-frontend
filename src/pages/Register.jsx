@@ -7,7 +7,6 @@ import ImageUpload from "../components/ui/ImageUpload";
 import { SPECIALIZATIONS } from "../data/locations";
 
 const INPUT_CLS = "w-full bg-stone-50 border border-stone-200 rounded-xl py-[13px] pl-11 pr-4 text-[15px] text-stone-800 outline-none transition-all placeholder:text-stone-400 focus:border-forest-400 focus:bg-white focus:ring-2 focus:ring-forest-100";
-const INPUT_SM  = "w-full bg-stone-50 border border-stone-200 rounded-xl py-[11px] pl-11 pr-4 text-[14px] text-stone-800 outline-none transition-all placeholder:text-stone-400 focus:border-forest-400 focus:bg-white focus:ring-2 focus:ring-forest-100";
 const SELECT_CLS = "w-full bg-stone-50 border border-stone-200 rounded-xl py-[11px] px-3 text-[14px] text-stone-800 outline-none transition-all focus:border-forest-400 focus:bg-white focus:ring-2 focus:ring-forest-100 appearance-none cursor-pointer";
 const LABEL_CLS = "flex items-center text-[12px] font-semibold text-stone-500 tracking-[0.12em] uppercase mb-2";
 const ERR_CLS = "block text-[12.5px] text-red-500 mt-1.5";
@@ -76,6 +75,7 @@ export default function Register() {
   const [otp, setOtp] = useState("");
   const [registeredEmail, setRegisteredEmail] = useState("");
   const [registeredRole, setRegisteredRole] = useState("trekker");
+  const [resendCooldown, setResendCooldown] = useState(60);
   const [resendTimer, setResendTimer] = useState(60);
   const [canResend, setCanResend] = useState(false);
 
@@ -117,10 +117,12 @@ export default function Register() {
     if (form.role === "guide" && !validateStep2Guide()) return;
     setLoading(true);
     try {
-      await authService.register({ ...form, profilePhotoUrl, nationalIdPublicId });
+      const data = await authService.register({ ...form, profilePhotoUrl, nationalIdPublicId });
+      const cooldown = data?.resendAfterSeconds ?? 60;
       setRegisteredEmail(form.email);
       setRegisteredRole(form.role);
-      setResendTimer(60);
+      setResendCooldown(cooldown);
+      setResendTimer(cooldown);
       setCanResend(false);
       setOtp("");
       setStep(3);
@@ -152,8 +154,10 @@ export default function Register() {
     setLoading(true);
     setErrors({});
     try {
-      await authService.resendOtp(registeredEmail);
-      setResendTimer(60);
+      const data = await authService.resendOtp(registeredEmail);
+      const cooldown = data?.resendAfterSeconds ?? resendCooldown;
+      setResendCooldown(cooldown);
+      setResendTimer(cooldown);
       setCanResend(false);
       setOtp("");
     } catch (err) {

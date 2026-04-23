@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
+import { formatNPR } from "../../utils/money";
 
 function RowLine({ label, value, sub, highlight, indent }) {
   return (
@@ -27,11 +28,13 @@ export default function PriceCalculator({ trekPrices, guideTiers, seasons, porte
   const tier = guideTiers.find((g) => g.id === guideTier) ?? guideTiers[0];
   const season = seasons.find((s) => s.id === seasonId) ?? seasons[0];
 
-  if (!trek || !tier || !season) return null;
+  // Cap the user-entered day count to the trek's bounds (0 if the trek hasn't loaded yet).
+  const validDays = trek ? Math.max(trek.minDays, Math.min(trek.maxDays, days)) : 0;
 
-  const validDays = Math.max(trek.minDays, Math.min(trek.maxDays, days));
-
+  // useMemo must be called unconditionally — guard against missing data inside the body
+  // rather than with an early return above.
   const calc = useMemo(() => {
+    if (!trek || !tier || !season) return null;
     const baseMin = trek.baseCost.min * season.multiplier;
     const baseMax = trek.baseCost.max * season.multiplier;
     const guideMin = tier.ratePerDay.min * validDays;
@@ -49,7 +52,9 @@ export default function PriceCalculator({ trekPrices, guideTiers, seasons, porte
     return { baseMin, baseMax, guideMin, guideMax, porterMin, porterMax, permitTotal, feeMin, feeMax, totalMin, totalMax, perPersonMin: Math.round(totalMin / g), perPersonMax: Math.round(totalMax / g) };
   }, [trek, tier, season, validDays, porterCount, group, porterRatePerDay, platformFeePct]);
 
-  const fmt = (n) => `$${Math.round(n).toLocaleString()}`;
+  if (!trek || !tier || !season || !calc) return null;
+
+  const fmt = (n) => formatNPR(Math.round(n));
   const fmtRange = (a, b) => `${fmt(a)}–${fmt(b)}`;
 
   return (
@@ -114,7 +119,7 @@ export default function PriceCalculator({ trekPrices, guideTiers, seasons, porte
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between flex-wrap gap-1">
                       <span className={`text-[13px] font-medium ${guideTier === g.id ? "text-forest-800" : "text-stone-700"}`}>{g.label}</span>
-                      <span className="text-[12px] text-stone-500">${g.ratePerDay.min}–${g.ratePerDay.max}/day</span>
+                      <span className="text-[12px] text-stone-500">{formatNPR(g.ratePerDay.min)}–{formatNPR(g.ratePerDay.max)}/day</span>
                     </div>
                     <span className="text-[11.5px] text-stone-400">{g.desc}</span>
                   </div>
@@ -140,7 +145,7 @@ export default function PriceCalculator({ trekPrices, guideTiers, seasons, porte
           {/* Porter + Group */}
           <div className="grid grid-cols-2 gap-4">
             {[
-              { label: "Porters", val: porterCount, set: setPorterCount, max: 5, note: `$${porterRatePerDay.min}–${porterRatePerDay.max}/day each` },
+              { label: "Porters", val: porterCount, set: setPorterCount, max: 5, note: `${formatNPR(porterRatePerDay.min)}–${formatNPR(porterRatePerDay.max)}/day each` },
               { label: "Group size", val: group, set: setGroup, max: 20, note: "Splits total cost" },
             ].map(({ label, val, set, max, note }) => (
               <div key={label}>
@@ -163,8 +168,8 @@ export default function PriceCalculator({ trekPrices, guideTiers, seasons, porte
               Breakdown · {trek.name}
             </h4>
             <RowLine label="Trek base cost" value={fmtRange(calc.baseMin, calc.baseMax)} sub={`${season.badge} season ×${season.multiplier}`} />
-            <RowLine label={`Guide · ${tier.label}`} value={fmtRange(calc.guideMin, calc.guideMax)} sub={`$${tier.ratePerDay.min}–${tier.ratePerDay.max}/day × ${validDays} days`} />
-            {porterCount > 0 && <RowLine label={`Porters ×${porterCount}`} value={fmtRange(calc.porterMin, calc.porterMax)} sub={`$${porterRatePerDay.min}–${porterRatePerDay.max}/day each`} />}
+            <RowLine label={`Guide · ${tier.label}`} value={fmtRange(calc.guideMin, calc.guideMax)} sub={`${formatNPR(tier.ratePerDay.min)}–${formatNPR(tier.ratePerDay.max)}/day × ${validDays} days`} />
+            {porterCount > 0 && <RowLine label={`Porters ×${porterCount}`} value={fmtRange(calc.porterMin, calc.porterMax)} sub={`${formatNPR(porterRatePerDay.min)}–${formatNPR(porterRatePerDay.max)}/day each`} />}
             <div className="mt-2 mb-1">
               <div className="text-[11px] uppercase tracking-[0.1em] text-stone-400 mb-1.5">Required Permits</div>
               {trek.permits.map((p) => <RowLine key={p.name} label={p.name} value={fmt(p.cost)} indent />)}

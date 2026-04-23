@@ -270,6 +270,8 @@ export default function TreksSection({ showToast }) {
     }
   }
 
+  // Load once on mount. `load` is stable because it closes over setters only.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { load(); }, []);
 
   async function handleSave(payload) {

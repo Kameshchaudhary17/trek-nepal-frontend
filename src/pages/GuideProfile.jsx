@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import Navbar from "../components/ui/Navbar";
 import BookingModal from "../components/guides/BookingModal";
 import { guideService } from "../services/api";
+import { formatNPR } from "../utils/money";
 
 /* ── Star rating ─────────────────────────────────────────────── */
 function Stars({ n = 0, size = 14 }) {
@@ -76,7 +77,6 @@ function Card({ title, icon, children }) {
 /* ── Page ────────────────────────────────────────────────────── */
 export default function GuideProfile() {
   const { id } = useParams();
-  const navigate = useNavigate();
 
   const [guide,        setGuide]        = useState(null);
   const [loading,      setLoading]      = useState(true);
@@ -234,7 +234,7 @@ export default function GuideProfile() {
               <div className="text-right">
                 <div className="text-[11px] text-stone-400 mb-0.5">Daily rate from</div>
                 <div className="font-serif text-[2rem] font-bold text-terra-500 leading-none">
-                  {guide.ratePerDay ? `$${guide.ratePerDay}` : "—"}
+                  {guide.ratePerDay ? formatNPR(guide.ratePerDay) : "—"}
                 </div>
                 <div className="text-[11px] text-stone-400">per day</div>
               </div>
@@ -265,7 +265,7 @@ export default function GuideProfile() {
             <StatBox label="Treks completed" value={guide.treksCompleted || "0"} />
             <StatBox label="Years experience" value={guide.experience > 0 ? `${guide.experience}+` : "—"} />
             <StatBox label="Average rating" value={rating > 0 ? rating.toFixed(1) : "—"} sub={reviews > 0 ? `${reviews} reviews` : ""} />
-            <StatBox label="Daily rate" value={guide.ratePerDay ? `$${guide.ratePerDay}` : "—"} sub="per person" />
+            <StatBox label="Daily rate" value={guide.ratePerDay ? formatNPR(guide.ratePerDay) : "—"} sub="per person" />
           </div>
         </div>
       </div>
@@ -356,7 +356,7 @@ export default function GuideProfile() {
                 <div className="text-[11px] text-stone-400 mb-1">Starting from</div>
                 <div className="flex items-end gap-1.5">
                   <span className="font-serif text-[2.2rem] font-bold text-terra-500 leading-none">
-                    {guide.ratePerDay ? `$${guide.ratePerDay}` : "—"}
+                    {guide.ratePerDay ? formatNPR(guide.ratePerDay) : "—"}
                   </span>
                   {guide.ratePerDay && <span className="text-[13px] text-stone-400 mb-1">/ day</span>}
                 </div>

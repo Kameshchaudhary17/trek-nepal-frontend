@@ -30,6 +30,8 @@ export default function PricingSection({ showToast }) {
       })
       .catch(() => showToast("Failed to load pricing data.", "error"))
       .finally(() => setLoading(false));
+    // showToast is a stable setter from the parent — safe to omit.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function updateLocal(trekId, field, val) {

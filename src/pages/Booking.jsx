@@ -1,7 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Navbar from "../components/ui/Navbar";
-import { bookingService } from "../services/api";
+import PaymentModal from "../components/payments/PaymentModal";
+import ReviewModal from "../components/reviews/ReviewModal";
+import ChatModal from "../components/messages/ChatModal";
+import { bookingService, reviewService } from "../services/api";
+import { formatNPR } from "../utils/money";
 
 const STATUS_TABS = ["All", "Pending", "Confirmed", "Rejected", "Cancelled"];
 
@@ -73,6 +77,10 @@ export default function Booking() {
   const [loading,    setLoading]    = useState(true);
   const [activeTab,  setActiveTab]  = useState("All");
   const [cancelling, setCancelling] = useState(null);
+  const [payingFor,    setPayingFor]   = useState(null);
+  const [reviewingFor, setReviewingFor] = useState(null);
+  const [chattingWith, setChattingWith] = useState(null);
+  const [reviewedIds,  setReviewedIds]  = useState(new Set());
 
   /* ── Auth guard ── */
   useEffect(() => {
@@ -83,10 +91,27 @@ export default function Booking() {
     if (parsed.role === "guide") { navigate("/guide/dashboard"); return; }
 
     bookingService.getMyBookings()
-      .then((res) => setBookings(res.bookings || []))
+      .then(async (res) => {
+        const list = res.bookings || [];
+        setBookings(list);
+        // Pre-check which completed bookings already have reviews so we can hide the CTA.
+        const completed = list.filter((b) => b.status === "completed");
+        const results = await Promise.all(
+          completed.map((b) =>
+            reviewService.forBooking(b._id).then((r) => (r.review ? b._id : null)).catch(() => null)
+          )
+        );
+        setReviewedIds(new Set(results.filter(Boolean)));
+      })
       .catch(() => setBookings([]))
       .finally(() => setLoading(false));
   }, [navigate]);
+
+  function refreshBookings() {
+    bookingService.getMyBookings()
+      .then((res) => setBookings(res.bookings || []))
+      .catch(() => {});
+  }
 
   async function handleCancel(bookingId) {
     if (!window.confirm("Are you sure you want to cancel this booking?")) return;
@@ -247,7 +272,7 @@ export default function Booking() {
                         {booking.totalCost > 0 && (
                           <div>
                             <span className="text-[11px] uppercase tracking-[0.08em] text-stone-400 font-semibold">Est. cost</span>
-                            <p className="text-[13px] font-bold text-terra-500">${booking.totalCost.toLocaleString()}</p>
+                            <p className="text-[13px] font-bold text-terra-500">{formatNPR(booking.totalCost)}</p>
                           </div>
                         )}
                       </div>
@@ -262,7 +287,26 @@ export default function Booking() {
 
                       {/* Actions */}
                       {(booking.status === "pending" || booking.status === "confirmed") && (
-                        <div className="mt-3 flex gap-2">
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          <button
+                            onClick={() => setChattingWith(booking)}
+                            className="px-4 py-1.5 rounded-xl text-[12.5px] font-semibold border border-stone-200 text-stone-700 hover:bg-stone-50 transition-colors"
+                          >
+                            Message guide
+                          </button>
+                          {booking.status === "confirmed" && booking.paymentStatus !== "paid" && (
+                            <button
+                              onClick={() => setPayingFor(booking)}
+                              className="px-4 py-1.5 rounded-xl text-[12.5px] font-semibold bg-forest-500 text-white hover:bg-forest-600 transition-colors"
+                            >
+                              Pay {formatNPR(booking.totalCost)}
+                            </button>
+                          )}
+                          {booking.status === "confirmed" && booking.paymentStatus === "paid" && (
+                            <span className="px-3 py-1.5 rounded-xl text-[12px] font-semibold bg-forest-50 border border-forest-200 text-forest-700">
+                              Paid
+                            </span>
+                          )}
                           <button
                             disabled={cancelling === booking._id}
                             onClick={() => handleCancel(booking._id)}
@@ -270,6 +314,24 @@ export default function Booking() {
                           >
                             {cancelling === booking._id ? "Cancelling…" : "Cancel"}
                           </button>
+                        </div>
+                      )}
+                      {booking.status === "completed" && !reviewedIds.has(booking._id) && (
+                        <div className="mt-3">
+                          <button
+                            onClick={() => setReviewingFor(booking)}
+                            className="px-4 py-1.5 rounded-xl text-[12.5px] font-semibold bg-terra-500 text-white hover:opacity-90 transition-opacity"
+                            style={{ background: "#e0b874", color: "#1f2937" }}
+                          >
+                            Leave a review
+                          </button>
+                        </div>
+                      )}
+                      {booking.status === "completed" && reviewedIds.has(booking._id) && (
+                        <div className="mt-3">
+                          <span className="px-3 py-1.5 rounded-xl text-[12px] font-semibold bg-stone-100 border border-stone-200 text-stone-500">
+                            Review submitted
+                          </span>
                         </div>
                       )}
                     </div>
@@ -280,6 +342,32 @@ export default function Booking() {
           </div>
         )}
       </main>
+
+      {payingFor && (
+        <PaymentModal
+          booking={payingFor}
+          onClose={() => setPayingFor(null)}
+          onPaid={() => {
+            setPayingFor(null);
+            refreshBookings();
+          }}
+        />
+      )}
+
+      {reviewingFor && (
+        <ReviewModal
+          booking={reviewingFor}
+          onClose={() => setReviewingFor(null)}
+          onSubmitted={() => {
+            setReviewedIds((prev) => new Set(prev).add(reviewingFor._id));
+            setReviewingFor(null);
+          }}
+        />
+      )}
+
+      {chattingWith && (
+        <ChatModal booking={chattingWith} onClose={() => setChattingWith(null)} />
+      )}
     </div>
   );
 }

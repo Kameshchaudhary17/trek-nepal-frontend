@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { formatNPR } from "../../utils/money";
 
 export default function GuideCard({ guide }) {
   const [imgErr, setImgErr] = useState(false);
@@ -54,7 +55,7 @@ export default function GuideCard({ guide }) {
         </div>
         <div>
           <div className="text-[10px] uppercase tracking-[0.12em] text-stone-400 mb-0.5">Rate / day</div>
-          <div className="text-[13.5px] font-medium text-stone-900 tabular-nums">${guide.ratePerDay}</div>
+          <div className="text-[13.5px] font-medium text-stone-900 tabular-nums">{formatNPR(guide.ratePerDay)}</div>
         </div>
         <div>
           <div className="text-[10px] uppercase tracking-[0.12em] text-stone-400 mb-0.5">Languages</div>

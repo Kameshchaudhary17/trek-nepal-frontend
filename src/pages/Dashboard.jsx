@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import SidebarAvatarMenu from "../components/ui/SidebarAvatarMenu";
 import ImageUpload from "../components/ui/ImageUpload";
 import authService, { bookingService } from "../services/api";
+import { formatNPR } from "../utils/money";
 
 const NAV = [
   { id: "overview",  label: "Overview",  icon: OverviewIcon  },
@@ -38,9 +39,8 @@ export default function Dashboard() {
 
   const initials = user.fullName?.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase() || "?";
 
-  function handleLogout() {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
+  async function handleLogout() {
+    await authService.logout();
     navigate("/");
   }
 
@@ -82,7 +82,7 @@ export default function Dashboard() {
                 const updated = { ...user, ...res.user };
                 setUser(updated);
                 localStorage.setItem("user", JSON.stringify(updated));
-              } catch {}
+              } catch { /* silently ignore — photo upload is non-critical */ }
             }}
           />
           <span className="inline-flex items-center gap-1.5 mt-3 text-[11px] px-2.5 py-1 rounded-full bg-stone-100 border border-stone-200 text-stone-600 font-semibold">
@@ -401,7 +401,7 @@ function DashBookingsTab() {
                       </div>
                       <div className="text-[12px] text-stone-400 truncate">
                         {booking.route || "—"} &middot; {booking.days} day{booking.days !== 1 ? "s" : ""}
-                        {booking.totalCost > 0 && ` · $${booking.totalCost.toLocaleString()}`}
+                        {booking.totalCost > 0 && ` · ${formatNPR(booking.totalCost)}`}
                       </div>
                     </div>
 
@@ -486,8 +486,6 @@ function AccountTab({ user, setUser }) {
   }
 
   const initials = user.fullName?.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase() || "?";
-
-  const inputCls = "w-full bg-white border-b border-stone-200 py-2.5 text-[14px] text-stone-900 outline-none transition-colors placeholder:text-stone-400 focus:border-forest-600";
 
   return (
     <div className="max-w-[680px]">

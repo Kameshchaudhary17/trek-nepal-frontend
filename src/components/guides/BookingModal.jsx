@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { bookingService } from "../../services/api";
+import { formatNPR } from "../../utils/money";
 
 const TODAY = new Date().toISOString().split("T")[0];
 
@@ -79,8 +80,8 @@ export default function BookingModal({ guide, onClose }) {
   }
 
   const cost = guide.ratePerDay
-    ? (guide.ratePerDay * Number(form.days || 0)).toLocaleString()
-    : null;
+    ? guide.ratePerDay * Number(form.days || 0)
+    : 0;
 
   return (
     <div
@@ -133,7 +134,7 @@ export default function BookingModal({ guide, onClose }) {
                 {guide.ratePerDay && (
                   <div className="text-right shrink-0">
                     <div className="text-[11px] text-stone-400">from</div>
-                    <div className="text-[14px] font-bold text-terra-500">${guide.ratePerDay}<span className="text-[10px] font-normal text-stone-400">/day</span></div>
+                    <div className="text-[14px] font-bold text-terra-500">{formatNPR(guide.ratePerDay)}<span className="text-[10px] font-normal text-stone-400">/day</span></div>
                   </div>
                 )}
               </div>
@@ -191,7 +192,7 @@ export default function BookingModal({ guide, onClose }) {
               {cost && form.days && Number(form.days) > 0 && (
                 <div className="flex items-center justify-between p-3 rounded-xl bg-forest-50 border border-forest-100 text-[13px]">
                   <span className="text-forest-700">Estimated guide cost</span>
-                  <span className="font-bold text-forest-800">${cost}</span>
+                  <span className="font-bold text-forest-800">{formatNPR(cost)}</span>
                 </div>
               )}
 
@@ -253,7 +254,7 @@ export default function BookingModal({ guide, onClose }) {
                 { label: "Route",  value: form.trek || "Not specified" },
                 { label: "Start",  value: form.start ? new Date(form.start + "T00:00").toLocaleDateString("en-US", { day: "numeric", month: "long", year: "numeric" }) : "—" },
                 { label: "Duration", value: `${form.days} day${Number(form.days) !== 1 ? "s" : ""}` },
-                ...(cost ? [{ label: "Est. guide cost", value: `$${cost}` }] : []),
+                ...(cost ? [{ label: "Est. guide cost", value: formatNPR(cost) }] : []),
               ].map(({ label, value }) => (
                 <div key={label} className="flex justify-between text-[12.5px]">
                   <span className="text-stone-400">{label}</span>

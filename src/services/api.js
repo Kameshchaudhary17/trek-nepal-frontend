@@ -1,13 +1,43 @@
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
+export class ApiError extends Error {
+  constructor(message, { status, data } = {}) {
+    super(message || 'API request failed');
+    this.name = 'ApiError';
+    this.status = status;
+    this.data = data;
+    // Legacy shape — existing callers read `err.response?.data?.message`.
+    this.response = { data };
+  }
+}
+
 async function request(path, options = {}) {
   const { headers: extraHeaders, ...rest } = options;
-  const res = await fetch(`${BASE_URL}${path}`, {
-    headers: { 'Content-Type': 'application/json', ...extraHeaders },
-    ...rest,
-  });
-  const data = await res.json();
-  if (!res.ok) throw { response: { data } };
+  let res;
+  try {
+    res = await fetch(`${BASE_URL}${path}`, {
+      headers: { 'Content-Type': 'application/json', ...extraHeaders },
+      ...rest,
+    });
+  } catch (err) {
+    // Network failure / CORS / DNS — fetch rejects without a Response.
+    throw new ApiError('Network error — please check your connection.', {
+      status: 0,
+      data: { message: 'Network error — please check your connection.' },
+    });
+  }
+
+  let data = null;
+  try {
+    data = await res.json();
+  } catch {
+    /* non-JSON response (e.g. 204, HTML error page) */
+  }
+
+  if (!res.ok) {
+    const message = data?.message || `Request failed (${res.status})`;
+    throw new ApiError(message, { status: res.status, data: data || { message } });
+  }
   return data;
 }
 
@@ -61,6 +91,34 @@ const authService = {
       body: JSON.stringify({ accessToken }),
     });
   },
+
+  forgotPassword(email) {
+    return request('/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  },
+
+  resetPassword(email, otp, newPassword) {
+    return request('/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ email, otp, newPassword }),
+    });
+  },
+
+  async logout() {
+    // Best-effort server-side revoke; always clear local state.
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        await request('/auth/logout', { method: 'POST', headers: authHeader() });
+      } catch {
+        /* ignore — client-side clear below is what matters for this device */
+      }
+    }
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+  },
 };
 
 const guideService = {
@@ -86,6 +144,14 @@ const guideService = {
       body: JSON.stringify(profileData),
     });
   },
+
+  getMyReviews() {
+    return request('/guides/me/reviews', { headers: authHeader() });
+  },
+
+  getMyEarnings() {
+    return request('/guides/me/earnings', { headers: authHeader() });
+  },
 };
 
 function authHeader() {
@@ -110,6 +176,10 @@ const adminService = {
   listTrekkers(search = '') {
     const qs = search ? `?search=${encodeURIComponent(search)}` : '';
     return request(`/users/admin/trekkers${qs}`, { headers: authHeader() });
+  },
+
+  getStats() {
+    return request('/users/admin/stats', { headers: authHeader() });
   },
 };
 
@@ -177,6 +247,51 @@ export const uploadService = {
     const data = await res.json();
     if (!res.ok) throw { response: { data } };
     return data;
+  },
+};
+
+export const reviewService = {
+  forGuide(guideId, params = {}) {
+    const qs = new URLSearchParams(
+      Object.fromEntries(Object.entries(params).filter(([, v]) => v !== undefined && v !== '' && v !== null))
+    ).toString();
+    return request(`/guides/${guideId}/reviews${qs ? `?${qs}` : ''}`);
+  },
+  forBooking(bookingId) {
+    return request(`/bookings/${bookingId}/review`, { headers: authHeader() });
+  },
+  submit(bookingId, { rating, comment }) {
+    return request(`/bookings/${bookingId}/review`, {
+      method: 'POST',
+      headers: authHeader(),
+      body: JSON.stringify({ rating, comment }),
+    });
+  },
+};
+
+export const paymentService = {
+  createIntent(bookingId) {
+    return request(`/payments/intent/${bookingId}`, {
+      method: 'POST',
+      headers: authHeader(),
+    });
+  },
+};
+
+export const messageService = {
+  list(bookingId, afterIso) {
+    const qs = afterIso ? `?after=${encodeURIComponent(afterIso)}` : '';
+    return request(`/bookings/${bookingId}/messages${qs}`, { headers: authHeader() });
+  },
+  send(bookingId, text) {
+    return request(`/bookings/${bookingId}/messages`, {
+      method: 'POST',
+      headers: authHeader(),
+      body: JSON.stringify({ text }),
+    });
+  },
+  unreadCount() {
+    return request('/messages/unread', { headers: authHeader() });
   },
 };
 

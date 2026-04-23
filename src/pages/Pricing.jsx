@@ -4,11 +4,12 @@ import Navbar from "../components/ui/Navbar";
 import PriceCalculator from "../components/pricing/PriceCalculator";
 import PriceCompare from "../components/pricing/PriceCompare";
 import { pricingService } from "../services/api";
+import { formatNPR } from "../utils/money";
 
 const PHASES = [
   {
     phase: "Phase 1", label: "Admin Controls (Current)", active: true,
-    items: ["Platform admin sets all base trek costs", "Admin defines guide tier rate bands ($min–$max)", "Admin controls permit & seasonal pricing", "Consistent, scam-proof foundation"],
+    items: ["Platform admin sets all base trek costs", "Admin defines guide tier rate bands (Rs. min–max)", "Admin controls permit & seasonal pricing", "Consistent, scam-proof foundation"],
     color: "#2D6A4F",
   },
   {
@@ -74,10 +75,10 @@ function BasePricingTable({ trekPrices }) {
                 <td className="px-4 py-4 text-stone-600">{t.difficulty}</td>
                 <td className="px-4 py-4 text-stone-600 tabular-nums">{t.minDays}–{t.maxDays}d</td>
                 <td className="px-4 py-4 text-stone-900 font-medium tabular-nums">
-                  ${t.baseCost.min.toLocaleString()} <span className="text-stone-300">–</span> ${t.baseCost.max.toLocaleString()}
+                  {formatNPR(t.baseCost.min)} <span className="text-stone-300">–</span> {formatNPR(t.baseCost.max)}
                 </td>
                 <td className="px-4 py-4">
-                  <span className="text-stone-700 tabular-nums">${permitTotal}</span>
+                  <span className="text-stone-700 tabular-nums">{formatNPR(permitTotal)}</span>
                   <div className="text-[11px] text-stone-400">{t.permits.length} required</div>
                 </td>
                 <td className="px-4 py-4 text-stone-500 text-[12.5px]">{t.season}</td>
@@ -97,7 +98,7 @@ function GuideTierTable({ guideTiers }) {
         <div key={g.id} className="py-8 px-6 first:pl-0">
           <div className="text-[11px] uppercase tracking-[0.14em] text-stone-400 mb-2">{g.label}</div>
           <div className="text-[1.6rem] font-medium text-stone-900 tabular-nums leading-none">
-            ${g.ratePerDay.min}–${g.ratePerDay.max}
+            {formatNPR(g.ratePerDay.min)}–{formatNPR(g.ratePerDay.max)}
             <span className="text-[13px] text-stone-400 ml-1 font-normal">/ day</span>
           </div>
           <p className="text-[12.5px] text-stone-500 mt-3 leading-relaxed">{g.desc}</p>
