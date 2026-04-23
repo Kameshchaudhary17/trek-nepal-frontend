@@ -180,5 +180,36 @@ export const uploadService = {
   },
 };
 
+export const bookingService = {
+  create(data) {
+    return request('/bookings', {
+      method: 'POST',
+      headers: authHeader(),
+      body: JSON.stringify(data),
+    });
+  },
+
+  getMyBookings() {
+    return request('/bookings/my', { headers: authHeader() });
+  },
+
+  getGuideBookings(status) {
+    const qs = status ? `?status=${encodeURIComponent(status)}` : '';
+    return request(`/bookings/guide${qs}`, { headers: authHeader() });
+  },
+
+  updateStatus(id, status, guideNote) {
+    return request(`/bookings/${id}/status`, {
+      method: 'PATCH',
+      headers: authHeader(),
+      body: JSON.stringify({ status, guideNote }),
+    });
+  },
+
+  getById(id) {
+    return request(`/bookings/${id}`, { headers: authHeader() });
+  },
+};
+
 export { guideService, adminService };
 export default authService;

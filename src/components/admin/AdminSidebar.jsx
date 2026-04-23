@@ -1,3 +1,5 @@
+import { Link, useNavigate } from "react-router-dom";
+
 const NAV_ITEMS = [
   { id: "overview", label: "Overview",           icon: OverviewIcon },
   { id: "guides",   label: "Guide Verification", icon: ShieldIcon   },
@@ -10,6 +12,14 @@ const NAV_ITEMS = [
 export { NAV_ITEMS };
 
 export default function AdminSidebar({ activeTab, setActiveTab, pendingCount, sidebarOpen, setSidebarOpen }) {
+  const navigate = useNavigate();
+
+  function handleLogout() {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    navigate("/");
+  }
+
   return (
     <>
       {sidebarOpen && (
@@ -17,11 +27,26 @@ export default function AdminSidebar({ activeTab, setActiveTab, pendingCount, si
       )}
 
       <aside
-        className={`fixed top-[68px] left-0 h-[calc(100vh-68px)] w-[260px] bg-white border-r border-stone-200 flex flex-col z-50 transition-transform duration-200 md:translate-x-0 ${
+        className={`fixed top-0 left-0 h-screen w-[260px] bg-white border-r border-stone-200 flex flex-col z-50 transition-transform duration-200 md:translate-x-0 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         }`}
       >
-        <div className="px-5 pt-6 pb-3">
+        {/* Logo */}
+        <div className="px-5 py-4 border-b border-stone-100">
+          <Link to="/" className="flex items-center gap-2 group">
+            <span className="text-forest-500">
+              <svg width="24" height="24" viewBox="0 0 28 28" fill="none">
+                <path d="M14 2L26 24H2L14 2Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+                <path d="M8 24L14 12L20 24" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" opacity="0.55" />
+              </svg>
+            </span>
+            <span className="font-serif text-[0.95rem] font-semibold tracking-wide text-stone-900 group-hover:text-forest-600 transition-colors">
+              TrekDirect<span className="text-forest-500">Nepal</span>
+            </span>
+          </Link>
+        </div>
+
+        <div className="px-5 pt-5 pb-3 flex-1 overflow-y-auto">
           <p className="text-[10px] uppercase tracking-[0.18em] text-stone-400 font-semibold mb-4 px-2">
             Admin Panel
           </p>
@@ -48,11 +73,20 @@ export default function AdminSidebar({ activeTab, setActiveTab, pendingCount, si
           </nav>
         </div>
 
-        <div className="mt-auto px-5 pb-6">
+        <div className="px-5 pb-5 space-y-3">
           <div className="bg-forest-50 border border-forest-200 rounded-xl p-3">
             <p className="text-[11px] text-forest-700 font-medium mb-0.5">Platform Status</p>
             <p className="text-[11px] text-forest-600">All systems operational</p>
           </div>
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-[13px] text-stone-500 hover:text-red-600 hover:bg-red-50 transition-colors font-medium"
+          >
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M5 2H2.5A1.5 1.5 0 001 3.5v7A1.5 1.5 0 002.5 12H5M9 10l3-3-3-3M13 7H5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            Log out
+          </button>
         </div>
       </aside>
     </>

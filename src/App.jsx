@@ -10,6 +10,7 @@ import GuideDashboard from './pages/GuideDashboard';
 import Conditions from './pages/Conditions';
 import Treks from './pages/Treks';
 import GuideProfile from './pages/GuideProfile';
+import Booking from './pages/Booking';
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
         <Route path="/guide/dashboard" element={<GuideDashboard />} />
         <Route path="/conditions" element={<Conditions />} />
         <Route path="/treks" element={<Treks />} />
+        <Route path="/bookings" element={<Booking />} />
       </Routes>
     </Router>
   );

@@ -1,9 +1,8 @@
 import { useEffect, useState, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
-import DashboardHeader from "../components/ui/DashboardHeader";
+import { Link, useNavigate } from "react-router-dom";
 import SidebarAvatarMenu from "../components/ui/SidebarAvatarMenu";
 import ImageUpload from "../components/ui/ImageUpload";
-import authService, { guideService, pricingService } from "../services/api";
+import authService, { guideService, pricingService, bookingService } from "../services/api";
 
 /* ── Sidebar nav items ───────────────────────────────────────────── */
 const NAV = [
@@ -174,10 +173,14 @@ export default function GuideDashboard() {
   const isPending  = !guide || guide.status === "pending";
   const isRejected = guide?.status === "rejected";
 
-  return (
-    <div className="min-h-screen bg-stone-50 font-sans">
-      <DashboardHeader title="Guide Dashboard" />
+  function handleLogout() {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    navigate("/");
+  }
 
+  return (
+    <div className="min-h-screen bg-stone-50 font-sans flex">
       {/* Toast */}
       {toast && (
         <div className={`fixed bottom-6 right-6 z-[100] flex items-center gap-2.5 px-4 py-3 rounded-xl text-[13.5px] font-semibold shadow-lg border ${
@@ -190,12 +193,25 @@ export default function GuideDashboard() {
         </div>
       )}
 
-      <div className="flex pt-[68px] min-h-screen">
-        {/* ── Sidebar ── */}
-        {sidebarOpen && (
-          <div className="fixed inset-0 bg-black/30 z-40 md:hidden" onClick={() => setSidebarOpen(false)} />
-        )}
-        <aside className={`fixed top-[68px] left-0 h-[calc(100vh-68px)] w-[240px] bg-white border-r border-stone-200 flex flex-col z-50 transition-transform duration-200 md:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}>
+      {/* Sidebar overlay (mobile) */}
+      {sidebarOpen && (
+        <div className="fixed inset-0 bg-black/30 z-40 md:hidden" onClick={() => setSidebarOpen(false)} />
+      )}
+      <aside className={`fixed top-0 left-0 h-screen w-[240px] bg-white border-r border-stone-200 flex flex-col z-50 transition-transform duration-200 md:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}>
+        {/* Logo */}
+        <div className="px-5 py-4 border-b border-stone-100">
+          <Link to="/" className="flex items-center gap-2 group">
+            <span className="text-forest-500">
+              <svg width="24" height="24" viewBox="0 0 28 28" fill="none">
+                <path d="M14 2L26 24H2L14 2Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+                <path d="M8 24L14 12L20 24" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" opacity="0.55" />
+              </svg>
+            </span>
+            <span className="font-serif text-[0.95rem] font-semibold tracking-wide text-stone-900 group-hover:text-forest-600 transition-colors">
+              TrekDirect<span className="text-forest-500">Nepal</span>
+            </span>
+          </Link>
+        </div>
           {/* Guide info */}
           <div className="px-5 pt-5 pb-4 border-b border-stone-100">
             <SidebarAvatarMenu
@@ -253,20 +269,29 @@ export default function GuideDashboard() {
             ))}
           </nav>
 
-          <div className="px-5 pb-6 mt-auto">
+          <div className="px-5 pb-5 mt-auto space-y-3">
             <div className="bg-stone-50 border border-stone-200 rounded-xl p-3">
               <p className="text-[11px] text-stone-600 font-medium mb-0.5">Daily rate</p>
               <p className="text-[1.1rem] font-serif font-bold text-terra-500">
                 {guide?.ratePerDay ? `$${guide.ratePerDay}/day` : "Not set"}
               </p>
             </div>
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-[13px] text-stone-500 hover:text-red-600 hover:bg-red-50 transition-colors font-medium"
+            >
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <path d="M5 2H2.5A1.5 1.5 0 001 3.5v7A1.5 1.5 0 002.5 12H5M9 10l3-3-3-3M13 7H5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              Log out
+            </button>
           </div>
         </aside>
 
         {/* ── Main ── */}
         <main className="flex-1 md:ml-[240px] min-w-0">
           {/* Mobile header */}
-          <div className="md:hidden flex items-center gap-3 px-5 py-3 border-b border-stone-200 bg-white">
+          <div className="md:hidden flex items-center justify-between px-5 py-3 border-b border-stone-200 bg-white sticky top-0 z-30">
             <button
               onClick={(e) => { e.stopPropagation(); setSidebarOpen(true); }}
               className="p-2 rounded-lg bg-stone-100 border border-stone-200 text-stone-600"
@@ -275,9 +300,11 @@ export default function GuideDashboard() {
                 <path d="M2 4h12M2 8h12M2 12h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
               </svg>
             </button>
-            <span className="text-[13px] text-stone-600 font-medium">
-              {NAV.find((n) => n.id === activeTab)?.label}
-            </span>
+            <Link to="/" className="flex items-center gap-2">
+              <span className="text-forest-500"><svg width="20" height="20" viewBox="0 0 28 28" fill="none"><path d="M14 2L26 24H2L14 2Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" /></svg></span>
+              <span className="font-serif text-[0.9rem] font-semibold text-stone-900">TrekDirect<span className="text-forest-500">Nepal</span></span>
+            </Link>
+            <span className="text-[12px] text-stone-400">{NAV.find((n) => n.id === activeTab)?.label}</span>
           </div>
 
           <div className="px-6 sm:px-10 py-8">
@@ -287,7 +314,6 @@ export default function GuideDashboard() {
             {activeTab === "bookings"  && <BookingsTab />}
           </div>
         </main>
-      </div>
     </div>
   );
 }
@@ -399,6 +425,7 @@ function ProfileTab({ form, updateForm, toggleLanguage, onSave, saving, hasNatio
 
   function addRoute(e) {
     if (e.key === "Enter" && routeInput.trim()) {
+      e.preventDefault();
       updateForm("routes", [...(form.routes || []), routeInput.trim()]);
       setRouteInput("");
     }
@@ -408,183 +435,231 @@ function ProfileTab({ form, updateForm, toggleLanguage, onSave, saving, hasNatio
     updateForm("routes", form.routes.filter((x) => x !== r));
   }
 
+  const initials = (form.fullName || "G").split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase();
+
   return (
-    <div className="max-w-[680px]">
-      <div className="mb-7">
+    <div className="max-w-[800px]">
+      <div className="mb-6">
         <span className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-forest-500 font-semibold mb-2">
           <span className="w-5 h-px bg-forest-300" /> My Profile
         </span>
         <h2 className="font-serif text-[1.7rem] font-bold text-stone-900">Guide Profile</h2>
-        <p className="text-[13.5px] text-stone-400 mt-1">Shown to trekkers in listings. Complete profile = more bookings.</p>
+        <p className="text-[13.5px] text-stone-400 mt-1">Shown to trekkers in listings. A complete profile gets more bookings.</p>
       </div>
 
-      <div className="space-y-5">
-        {/* ── Personal details ── */}
-        <div className="bg-stone-50 border border-stone-200 rounded-2xl p-5 space-y-4">
-          <p className="text-[11px] uppercase tracking-[0.18em] text-stone-400 font-semibold">Personal Details</p>
-
-          <Field label="Full Name">
-            <input
-              type="text"
-              value={form.fullName}
-              onChange={(e) => updateForm("fullName", e.target.value)}
-              placeholder="Your full name"
-              className={inputCls}
-            />
-          </Field>
-
-          <Field label="Email">
-            <input
-              type="email"
-              value={userEmail}
-              disabled
-              className="w-full bg-stone-100 border border-stone-200 rounded-xl px-4 py-3 text-[14px] text-stone-400 outline-none cursor-not-allowed"
-            />
-            <p className="text-[11.5px] text-stone-400 mt-1">Email cannot be changed.</p>
-          </Field>
-
-          <Field label="Phone">
-            <input
-              type="tel"
-              value={form.phone}
-              onChange={(e) => updateForm("phone", e.target.value)}
-              placeholder="+977 98XXXXXXXX"
-              className={inputCls}
-            />
-          </Field>
-        </div>
-
-        {/* Profile photo */}
-        <Field label="Profile Photo">
-          <ImageUpload
-            uploadType="profile"
-            accept="image/jpeg,image/png,image/webp"
-            maxSizeMB={5}
-            value={form.profilePhoto}
-            onChange={({ url }) => updateForm("profilePhoto", url)}
-            hint="Square photo recommended · shown in guide listings"
-          />
-        </Field>
-
-        {/* Specialty */}
-        <Field label="Specialty / Trek Type">
-          <input
-            type="text"
-            value={form.specialty}
-            onChange={(e) => updateForm("specialty", e.target.value)}
-            placeholder="e.g. High-altitude trekking, EBC, Annapurna Circuit"
-            className={inputCls}
-          />
-        </Field>
-
-        {/* Region */}
-        <Field label="Primary Region">
-          <select value={form.region} onChange={(e) => updateForm("region", e.target.value)} className={inputCls}>
-            {REGION_OPTIONS.map((r) => <option key={r}>{r}</option>)}
-          </select>
-        </Field>
-
-        {/* Experience */}
-        <Field label="Years of Experience">
-          <input
-            type="number" min="0" max="50"
-            value={form.experience}
-            onChange={(e) => updateForm("experience", Number(e.target.value))}
-            className={inputCls}
-          />
-        </Field>
-
-        {/* Bio */}
-        <Field label="Bio" hint="Tell trekkers about yourself, your experience and why they should choose you.">
-          <textarea
-            rows={4}
-            value={form.bio}
-            onChange={(e) => updateForm("bio", e.target.value)}
-            placeholder="Share your story, certifications, favorite treks..."
-            className={`${inputCls} resize-none`}
-          />
-        </Field>
-
-        {/* Languages */}
-        <Field label="Languages Spoken">
-          <div className="flex flex-wrap gap-2">
-            {LANGUAGES_OPTIONS.map((lang) => {
-              const active = form.languages.includes(lang);
-              return (
-                <button
-                  key={lang}
-                  type="button"
-                  onClick={() => toggleLanguage(lang)}
-                  className={`px-3 py-1.5 rounded-lg text-[12.5px] border font-medium transition-all ${
-                    active ? "bg-forest-50 border-forest-300 text-forest-700" : "bg-stone-50 border-stone-200 text-stone-600 hover:bg-stone-100"
-                  }`}
-                >
-                  {lang}
-                </button>
-              );
-            })}
-          </div>
-        </Field>
-
-        {/* Routes */}
-        <Field label="Trek Routes" hint="Press Enter to add a route.">
-          <input
-            type="text"
-            value={routeInput}
-            onChange={(e) => setRouteInput(e.target.value)}
-            onKeyDown={addRoute}
-            placeholder="e.g. Everest Base Camp"
-            className={inputCls}
-          />
-          {form.routes?.length > 0 && (
-            <div className="flex flex-wrap gap-2 mt-2.5">
-              {form.routes.map((r) => (
-                <span key={r} className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-stone-100 border border-stone-200 text-[12px] text-stone-700">
-                  {r}
-                  <button type="button" onClick={() => removeRoute(r)} className="text-stone-400 hover:text-stone-700 leading-none">×</button>
+      {/* ── Profile hero ── */}
+      <div className="bg-white border border-stone-200 rounded-2xl overflow-hidden mb-5">
+        <div className="h-[72px] bg-gradient-to-br from-stone-800 via-forest-800 to-forest-600" />
+        <div className="px-6 pb-5">
+          <div className="flex items-end justify-between -mt-9 mb-3">
+            {form.profilePhoto ? (
+              <img
+                src={form.profilePhoto} alt={form.fullName}
+                className="w-[68px] h-[68px] rounded-2xl object-cover border-[3px] border-white shadow ring-1 ring-stone-100"
+              />
+            ) : (
+              <div className="w-[68px] h-[68px] rounded-2xl bg-forest-700 flex items-center justify-center font-serif font-bold text-[1.25rem] text-white border-[3px] border-white shadow">
+                {initials}
+              </div>
+            )}
+            <div className="mb-1 flex items-center gap-2 flex-wrap justify-end">
+              {form.specialty && (
+                <span className="text-[11px] px-2.5 py-1 rounded-full bg-stone-100 border border-stone-200 text-stone-600 font-medium">
+                  {form.specialty.split(",")[0].trim()}
                 </span>
-              ))}
+              )}
+              {form.experience > 0 && (
+                <span className="text-[11px] px-2.5 py-1 rounded-full bg-blue-50 border border-blue-200 text-blue-700 font-medium">
+                  {form.experience} yrs exp
+                </span>
+              )}
             </div>
-          )}
-        </Field>
-
-        {/* National ID — read only */}
-        <Field label="Identity Document">
-          {hasNationalId ? (
-            <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-forest-50 border border-forest-200">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-forest-500 shrink-0">
-                <rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" strokeWidth="1.3" />
-                <path d="M5 8l2 2 4-4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+          </div>
+          <h3 className="font-serif text-[1.15rem] font-bold text-stone-900 leading-snug">{form.fullName || "—"}</h3>
+          <p className="text-[13px] text-stone-400 mt-0.5">{userEmail}</p>
+          {form.region && form.region !== "Other" && (
+            <p className="text-[12px] text-stone-500 mt-1 flex items-center gap-1">
+              <svg width="11" height="11" viewBox="0 0 14 18" fill="none" className="text-forest-400 shrink-0">
+                <path d="M7 1C4.239 1 2 3.239 2 6c0 4 5 11 5 11s5-7 5-11c0-2.761-2.239-5-5-5z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
               </svg>
-              <div className="flex-1 min-w-0">
-                <p className="text-[13px] font-semibold text-forest-700">Document on file</p>
-                <p className="text-[11.5px] text-forest-600">Visible to admin only · contact support to update</p>
-              </div>
-              <span className="text-[11px] px-2 py-0.5 rounded-full bg-forest-100 border border-forest-200 text-forest-700 font-semibold shrink-0">Locked</span>
-            </div>
-          ) : (
-            <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-amber-50 border border-amber-200">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-amber-500 shrink-0">
-                <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.3" />
-                <path d="M8 5v3M8 10v.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-              </svg>
-              <div className="flex-1 min-w-0">
-                <p className="text-[13px] font-semibold text-amber-800">No document on file</p>
-                <p className="text-[11.5px] text-amber-700">Contact support or re-register to submit your identity document.</p>
-              </div>
-            </div>
+              {form.region} Region
+            </p>
           )}
-        </Field>
-
-        <div className="pt-2">
-          <button
-            onClick={onSave}
-            disabled={saving}
-            className="px-6 py-3 bg-forest-500 text-white rounded-xl text-[14px] font-semibold hover:bg-forest-600 transition-all disabled:opacity-60"
-          >
-            {saving ? "Saving…" : "Save Profile"}
-          </button>
         </div>
+      </div>
+
+      {/* ── Two-column: personal + guide details ── */}
+      <div className="grid md:grid-cols-2 gap-4 mb-4">
+        {/* Personal details */}
+        <div className="bg-white border border-stone-200 rounded-2xl p-5">
+          <p className="text-[11px] uppercase tracking-[0.18em] text-stone-400 font-semibold mb-4">Personal Details</p>
+          <div className="space-y-4">
+            {/* Photo upload */}
+            <div>
+              <label className="block text-[12px] font-semibold text-stone-600 mb-2">Profile Photo</label>
+              <div className="flex items-center gap-3">
+                {form.profilePhoto ? (
+                  <img src={form.profilePhoto} alt={form.fullName}
+                    className="w-12 h-12 rounded-xl object-cover shrink-0 border border-stone-200" />
+                ) : (
+                  <div className="w-12 h-12 rounded-xl bg-forest-700 flex items-center justify-center font-bold text-[0.9rem] text-white shrink-0">
+                    {initials}
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <ImageUpload
+                    uploadType="profile"
+                    accept="image/jpeg,image/png,image/webp"
+                    maxSizeMB={5}
+                    value={form.profilePhoto}
+                    onChange={({ url }) => updateForm("profilePhoto", url)}
+                    hint="Square · shown in guide listings"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-[12px] font-semibold text-stone-600 mb-1.5">Full Name</label>
+              <input type="text" value={form.fullName}
+                onChange={(e) => updateForm("fullName", e.target.value)}
+                placeholder="Your full name" className={inputCls} />
+            </div>
+
+            <div>
+              <label className="block text-[12px] font-semibold text-stone-600 mb-1.5">Email</label>
+              <input type="email" value={userEmail} disabled
+                className="w-full bg-stone-100 border border-stone-200 rounded-xl px-3.5 py-2.5 text-[14px] text-stone-400 outline-none cursor-not-allowed" />
+              <p className="text-[11px] text-stone-400 mt-1">Cannot be changed</p>
+            </div>
+
+            <div>
+              <label className="block text-[12px] font-semibold text-stone-600 mb-1.5">Phone</label>
+              <input type="tel" value={form.phone}
+                onChange={(e) => updateForm("phone", e.target.value)}
+                placeholder="+977 98XXXXXXXX" className={inputCls} />
+            </div>
+          </div>
+        </div>
+
+        {/* Guide details */}
+        <div className="bg-white border border-stone-200 rounded-2xl p-5">
+          <p className="text-[11px] uppercase tracking-[0.18em] text-stone-400 font-semibold mb-4">Guide Details</p>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-[12px] font-semibold text-stone-600 mb-1.5">Specialty / Trek Type</label>
+              <input type="text" value={form.specialty}
+                onChange={(e) => updateForm("specialty", e.target.value)}
+                placeholder="e.g. High-altitude, EBC, Annapurna" className={inputCls} />
+            </div>
+
+            <div>
+              <label className="block text-[12px] font-semibold text-stone-600 mb-1.5">Primary Region</label>
+              <select value={form.region} onChange={(e) => updateForm("region", e.target.value)} className={inputCls}>
+                {REGION_OPTIONS.map((r) => <option key={r}>{r}</option>)}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-[12px] font-semibold text-stone-600 mb-1.5">Years of Experience</label>
+              <input type="number" min="0" max="50" value={form.experience}
+                onChange={(e) => updateForm("experience", Number(e.target.value))}
+                className={inputCls} />
+            </div>
+
+            <div>
+              <label className="block text-[12px] font-semibold text-stone-600 mb-1">Bio</label>
+              <p className="text-[11px] text-stone-400 mb-1.5">Tell trekkers about yourself.</p>
+              <textarea rows={5} value={form.bio}
+                onChange={(e) => updateForm("bio", e.target.value)}
+                placeholder="Share your story, certifications, favorite treks..."
+                className={`${inputCls} resize-none`} />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Languages ── */}
+      <div className="bg-white border border-stone-200 rounded-2xl p-5 mb-4">
+        <p className="text-[11px] uppercase tracking-[0.18em] text-stone-400 font-semibold mb-3">Languages Spoken</p>
+        <div className="flex flex-wrap gap-2">
+          {LANGUAGES_OPTIONS.map((lang) => {
+            const active = form.languages.includes(lang);
+            return (
+              <button key={lang} type="button" onClick={() => toggleLanguage(lang)}
+                className={`px-3 py-1.5 rounded-lg text-[12.5px] border font-medium transition-all ${
+                  active ? "bg-forest-50 border-forest-300 text-forest-700" : "bg-stone-50 border-stone-200 text-stone-600 hover:bg-stone-100"
+                }`}
+              >
+                {lang}
+              </button>
+            );
+          })}
+        </div>
+        {form.languages.length > 0 && (
+          <p className="text-[11px] text-stone-400 mt-2.5">{form.languages.length} language{form.languages.length !== 1 ? "s" : ""} selected</p>
+        )}
+      </div>
+
+      {/* ── Trek Routes ── */}
+      <div className="bg-white border border-stone-200 rounded-2xl p-5 mb-4">
+        <p className="text-[11px] uppercase tracking-[0.18em] text-stone-400 font-semibold mb-1">Trek Routes</p>
+        <p className="text-[11.5px] text-stone-400 mb-3">Press Enter to add a route you specialize in.</p>
+        <input type="text" value={routeInput}
+          onChange={(e) => setRouteInput(e.target.value)}
+          onKeyDown={addRoute}
+          placeholder="e.g. Everest Base Camp"
+          className={inputCls} />
+        {form.routes?.length > 0 && (
+          <div className="flex flex-wrap gap-2 mt-3">
+            {form.routes.map((r) => (
+              <span key={r} className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-stone-100 border border-stone-200 text-[12px] text-stone-700">
+                {r}
+                <button type="button" onClick={() => removeRoute(r)} className="text-stone-400 hover:text-stone-700 leading-none ml-0.5">×</button>
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ── Identity Document ── */}
+      <div className="bg-white border border-stone-200 rounded-2xl p-5 mb-5">
+        <p className="text-[11px] uppercase tracking-[0.18em] text-stone-400 font-semibold mb-3">Identity Document</p>
+        {hasNationalId ? (
+          <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-forest-50 border border-forest-200">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-forest-500 shrink-0">
+              <rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" strokeWidth="1.3" />
+              <path d="M5 8l2 2 4-4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            <div className="flex-1">
+              <p className="text-[13px] font-semibold text-forest-700">Document on file</p>
+              <p className="text-[11.5px] text-forest-600">Visible to admin only · contact support to update</p>
+            </div>
+            <span className="text-[11px] px-2 py-0.5 rounded-full bg-forest-100 border border-forest-200 text-forest-700 font-semibold shrink-0">Locked</span>
+          </div>
+        ) : (
+          <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-amber-50 border border-amber-200">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-amber-500 shrink-0">
+              <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.3" />
+              <path d="M8 5v3M8 10v.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+            <div>
+              <p className="text-[13px] font-semibold text-amber-800">No document on file</p>
+              <p className="text-[11.5px] text-amber-700">Contact support or re-register to submit your identity document.</p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="flex justify-end pb-4">
+        <button onClick={onSave} disabled={saving}
+          className="px-7 py-2.5 bg-forest-500 text-white rounded-xl text-[14px] font-semibold hover:bg-forest-600 transition-all disabled:opacity-60 flex items-center gap-2"
+        >
+          {saving
+            ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Saving…</>
+            : "Save Profile"
+          }
+        </button>
       </div>
     </div>
   );
@@ -729,7 +804,108 @@ function RateTab({ guide, pricing, selectedTier, setSelectedTier, rateInput, set
 }
 
 /* ── Bookings Tab ───────────────────────────────────────────────── */
+const GUIDE_BOOKING_TABS = ["All", "Pending", "Confirmed", "Rejected"];
+
+const STATUS_BADGE_CLS = {
+  pending:   "bg-amber-50 border border-amber-200 text-amber-700",
+  confirmed: "bg-forest-50 border border-forest-200 text-forest-700",
+  rejected:  "bg-red-50 border border-red-200 text-red-600",
+  cancelled: "bg-stone-100 border border-stone-200 text-stone-500",
+  completed: "bg-blue-50 border border-blue-200 text-blue-700",
+};
+
+function formatBookingDate(dateStr) {
+  if (!dateStr) return "—";
+  return new Date(dateStr).toLocaleDateString("en-US", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+function TrekkerAvatar({ trekker }) {
+  const photo = trekker?.profilePhoto;
+  if (photo) {
+    return (
+      <img
+        src={photo}
+        alt={trekker?.fullName || "Trekker"}
+        className="w-10 h-10 rounded-xl object-cover shrink-0"
+      />
+    );
+  }
+  const initials = (trekker?.fullName || "T")
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+  return (
+    <div className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-[0.8rem] text-white bg-gradient-to-br from-forest-400 to-forest-600 shrink-0">
+      {initials}
+    </div>
+  );
+}
+
 function BookingsTab() {
+  const [bookings,      setBookings]      = useState([]);
+  const [loading,       setLoading]       = useState(true);
+  const [activeTab,     setActiveTab]     = useState("All");
+  const [actionState,   setActionState]   = useState({}); // { [id]: { open: 'confirm'|'reject', note: '', saving: false } }
+
+  useEffect(() => {
+    bookingService.getGuideBookings()
+      .then((res) => setBookings(res.bookings || []))
+      .catch(() => setBookings([]))
+      .finally(() => setLoading(false));
+  }, []);
+
+  function openAction(id, type) {
+    setActionState((prev) => ({
+      ...prev,
+      [id]: { open: type, note: "", saving: false },
+    }));
+  }
+
+  function closeAction(id) {
+    setActionState((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+  }
+
+  function setNote(id, val) {
+    setActionState((prev) => ({
+      ...prev,
+      [id]: { ...prev[id], note: val },
+    }));
+  }
+
+  async function handleAction(id, status) {
+    const note = actionState[id]?.note || "";
+    setActionState((prev) => ({
+      ...prev,
+      [id]: { ...prev[id], saving: true },
+    }));
+    try {
+      const res = await bookingService.updateStatus(id, status, note || undefined);
+      setBookings((prev) => prev.map((b) => (b._id === id ? res.booking : b)));
+      closeAction(id);
+    } catch (err) {
+      setActionState((prev) => ({
+        ...prev,
+        [id]: { ...prev[id], saving: false },
+      }));
+      alert(err?.response?.data?.message || "Failed to update booking.");
+    }
+  }
+
+  const filtered =
+    activeTab === "All"
+      ? bookings
+      : bookings.filter((b) => b.status === activeTab.toLowerCase());
+
   return (
     <div>
       <div className="mb-7">
@@ -738,13 +914,199 @@ function BookingsTab() {
         </span>
         <h2 className="font-serif text-[1.7rem] font-bold text-stone-900">Booking Requests</h2>
       </div>
-      <div className="bg-white border border-stone-200 rounded-2xl p-10 flex flex-col items-center justify-center text-center">
-        <div className="w-14 h-14 rounded-2xl bg-stone-100 border border-stone-200 flex items-center justify-center text-2xl mb-4">📭</div>
-        <h3 className="font-serif text-[1.1rem] font-semibold text-stone-800 mb-2">No bookings yet</h3>
-        <p className="text-[13.5px] text-stone-400 max-w-[280px] leading-relaxed">
-          Complete your profile and get verified to start receiving booking requests from trekkers.
-        </p>
+
+      {/* Tabs */}
+      <div className="flex items-center gap-2 flex-wrap mb-5">
+        {GUIDE_BOOKING_TABS.map((tab) => {
+          const isActive = activeTab === tab;
+          const count =
+            tab === "All"
+              ? bookings.length
+              : bookings.filter((b) => b.status === tab.toLowerCase()).length;
+          return (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[13px] font-medium transition-all border ${
+                isActive
+                  ? "bg-forest-500 text-white border-forest-500 shadow-sm"
+                  : "bg-white text-stone-600 border-stone-200 hover:border-forest-300 hover:text-forest-600"
+              }`}
+            >
+              {tab}
+              {count > 0 && (
+                <span className={`text-[11px] px-1.5 py-px rounded-full font-semibold ${isActive ? "bg-white/20 text-white" : "bg-stone-100 text-stone-500"}`}>
+                  {count}
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
+
+      {/* Content */}
+      {loading ? (
+        <div className="space-y-4">
+          {[1, 2].map((n) => (
+            <div key={n} className="bg-white border border-stone-200 rounded-2xl p-5 animate-pulse">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-xl bg-stone-200 shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 bg-stone-200 rounded w-1/3" />
+                  <div className="h-3 bg-stone-100 rounded w-1/2" />
+                  <div className="h-3 bg-stone-100 rounded w-2/3" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="bg-white border border-stone-200 rounded-2xl p-10 flex flex-col items-center text-center">
+          <div className="w-14 h-14 rounded-2xl bg-stone-100 border border-stone-200 flex items-center justify-center mb-4">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <rect x="3" y="4" width="18" height="17" rx="2" stroke="#a8a29e" strokeWidth="1.5" />
+              <path d="M8 2v4M16 2v4M3 10h18" stroke="#a8a29e" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+          </div>
+          <h3 className="font-serif text-[1.1rem] font-semibold text-stone-800 mb-2">
+            {activeTab === "All" ? "No bookings yet" : `No ${activeTab.toLowerCase()} bookings`}
+          </h3>
+          <p className="text-[13.5px] text-stone-400 max-w-[280px] leading-relaxed">
+            {activeTab === "All"
+              ? "Complete your profile and get verified to start receiving booking requests from trekkers."
+              : `You have no bookings with ${activeTab.toLowerCase()} status.`}
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {filtered.map((booking) => {
+            const trekker = booking.trekker;
+            const action  = actionState[booking._id];
+
+            return (
+              <div
+                key={booking._id}
+                className="bg-white border border-stone-200 rounded-2xl p-5"
+              >
+                <div className="flex items-start gap-3">
+                  <TrekkerAvatar trekker={trekker} />
+
+                  <div className="flex-1 min-w-0">
+                    {/* Header row */}
+                    <div className="flex items-start justify-between gap-2 mb-0.5">
+                      <div>
+                        <div className="text-[14px] font-semibold text-stone-900">
+                          {trekker?.fullName || "Trekker"}
+                        </div>
+                        <div className="text-[12px] text-stone-400">{trekker?.email || ""}</div>
+                      </div>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11.5px] font-medium capitalize shrink-0 ${STATUS_BADGE_CLS[booking.status] || STATUS_BADGE_CLS.pending}`}>
+                        {booking.status}
+                      </span>
+                    </div>
+
+                    {/* Details grid */}
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-2.5">
+                      <div>
+                        <span className="text-[11px] uppercase tracking-[0.08em] text-stone-400 font-semibold">Route</span>
+                        <p className="text-[13px] text-stone-700 font-medium truncate">{booking.route || "—"}</p>
+                      </div>
+                      <div>
+                        <span className="text-[11px] uppercase tracking-[0.08em] text-stone-400 font-semibold">Start date</span>
+                        <p className="text-[13px] text-stone-700 font-medium">{formatBookingDate(booking.startDate)}</p>
+                      </div>
+                      <div>
+                        <span className="text-[11px] uppercase tracking-[0.08em] text-stone-400 font-semibold">Duration</span>
+                        <p className="text-[13px] text-stone-700 font-medium">{booking.days} day{booking.days !== 1 ? "s" : ""}</p>
+                      </div>
+                      {booking.totalCost > 0 && (
+                        <div>
+                          <span className="text-[11px] uppercase tracking-[0.08em] text-stone-400 font-semibold">Est. cost</span>
+                          <p className="text-[13px] font-bold text-terra-500">${booking.totalCost.toLocaleString()}</p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Trekker message */}
+                    {booking.message && (
+                      <div className="mt-3 px-3 py-2.5 rounded-xl bg-stone-50 border border-stone-200 border-l-2 border-l-forest-300">
+                        <span className="text-[11px] uppercase tracking-[0.08em] text-stone-400 font-semibold block mb-0.5">Message from trekker</span>
+                        <p className="text-[12.5px] text-stone-600 leading-relaxed italic">"{booking.message}"</p>
+                      </div>
+                    )}
+
+                    {/* Guide note if already set */}
+                    {booking.guideNote && (
+                      <div className="mt-2 px-3 py-2 rounded-xl bg-forest-50 border border-forest-200">
+                        <span className="text-[11px] uppercase tracking-[0.08em] text-forest-600 font-semibold block mb-0.5">Your note</span>
+                        <p className="text-[12.5px] text-forest-700 leading-relaxed">{booking.guideNote}</p>
+                      </div>
+                    )}
+
+                    {/* Pending actions */}
+                    {booking.status === "pending" && !action && (
+                      <div className="mt-3 flex gap-2">
+                        <button
+                          onClick={() => openAction(booking._id, "confirm")}
+                          className="px-4 py-1.5 rounded-xl text-[12.5px] font-semibold bg-forest-500 text-white hover:bg-forest-600 transition-colors"
+                        >
+                          Confirm
+                        </button>
+                        <button
+                          onClick={() => openAction(booking._id, "reject")}
+                          className="px-4 py-1.5 rounded-xl text-[12.5px] font-semibold border border-red-200 text-red-600 hover:bg-red-50 transition-colors"
+                        >
+                          Reject
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Inline confirm/reject note input */}
+                    {action && (
+                      <div className="mt-3 p-3 rounded-xl bg-stone-50 border border-stone-200 space-y-2">
+                        <label className="block text-[11.5px] font-semibold text-stone-500 uppercase tracking-[0.1em]">
+                          {action.open === "confirm" ? "Add a confirmation note (optional)" : "Reason for rejection (optional)"}
+                        </label>
+                        <textarea
+                          rows={2}
+                          value={action.note}
+                          onChange={(e) => setNote(booking._id, e.target.value)}
+                          placeholder={action.open === "confirm" ? "e.g. Looking forward to guiding you!" : "e.g. Unavailable on those dates."}
+                          className="w-full bg-white border border-stone-200 rounded-xl px-3 py-2 text-[13px] text-stone-800 outline-none focus:border-forest-400 focus:ring-2 focus:ring-forest-100 transition-colors resize-none"
+                        />
+                        <div className="flex gap-2">
+                          <button
+                            disabled={action.saving}
+                            onClick={() => handleAction(booking._id, action.open === "confirm" ? "confirmed" : "rejected")}
+                            className={`px-4 py-1.5 rounded-xl text-[12.5px] font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                              action.open === "confirm"
+                                ? "bg-forest-500 text-white hover:bg-forest-600"
+                                : "bg-red-500 text-white hover:bg-red-600"
+                            }`}
+                          >
+                            {action.saving
+                              ? "Saving…"
+                              : action.open === "confirm"
+                              ? "Confirm booking"
+                              : "Reject booking"}
+                          </button>
+                          <button
+                            disabled={action.saving}
+                            onClick={() => closeAction(booking._id)}
+                            className="px-4 py-1.5 rounded-xl text-[12.5px] font-semibold border border-stone-200 text-stone-600 hover:bg-stone-100 transition-colors disabled:opacity-50"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

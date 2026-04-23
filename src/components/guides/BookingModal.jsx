@@ -1,17 +1,21 @@
 import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import { bookingService } from "../../services/api";
 
 const TODAY = new Date().toISOString().split("T")[0];
 
 export default function BookingModal({ guide, onClose }) {
-  const [step,    setStep]    = useState(1); // 1 = form, 2 = success
-  const [form,    setForm]    = useState({
+  const navigate = useNavigate();
+  const [step,     setStep]     = useState(1); // 1 = form, 2 = success
+  const [form,     setForm]     = useState({
     trek:    guide.routes?.[0] || "",
     start:   "",
     days:    guide.experience > 0 ? "7" : "7",
     message: "",
   });
-  const [errors,  setErrors]  = useState({});
-  const [loading, setLoading] = useState(false);
+  const [errors,   setErrors]   = useState({});
+  const [loading,  setLoading]  = useState(false);
+  const [apiError, setApiError] = useState("");
   const overlayRef = useRef(null);
 
   /* close on Escape */
@@ -44,11 +48,34 @@ export default function BookingModal({ guide, onClose }) {
   async function handleSubmit(e) {
     e.preventDefault();
     if (!validate()) return;
+
+    const token = localStorage.getItem("token");
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+
     setLoading(true);
-    /* Booking API not yet wired — simulate a short delay */
-    await new Promise((r) => setTimeout(r, 900));
-    setLoading(false);
-    setStep(2);
+    setApiError("");
+    try {
+      await bookingService.create({
+        guideId: guide._id,
+        route: form.trek,
+        startDate: form.start,
+        days: Number(form.days),
+        message: form.message,
+      });
+      setStep(2);
+    } catch (err) {
+      const status = err?.response?.data?.status;
+      if (status === 401) {
+        navigate("/login");
+      } else {
+        setApiError(err?.response?.data?.message || "Failed to send booking request. Please try again.");
+      }
+    } finally {
+      setLoading(false);
+    }
   }
 
   const cost = guide.ratePerDay
@@ -189,7 +216,12 @@ export default function BookingModal({ guide, onClose }) {
             </div>
 
             {/* Footer */}
-            <div className="px-6 py-4 border-t border-stone-100 bg-stone-50">
+            <div className="px-6 py-4 border-t border-stone-100 bg-stone-50 space-y-3">
+              {apiError && (
+                <p className="text-[12.5px] text-red-600 bg-red-50 border border-red-200 rounded-xl px-3 py-2 text-center">
+                  {apiError}
+                </p>
+              )}
               <button
                 type="submit"
                 disabled={loading}

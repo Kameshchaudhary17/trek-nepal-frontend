@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
-import Navbar from "../components/ui/Navbar";
+import { Link, useNavigate } from "react-router-dom";
 import { adminService } from "../services/api";
 import AdminSidebar, { NAV_ITEMS } from "../components/admin/AdminSidebar";
 import OverviewSection from "../components/admin/OverviewSection";
@@ -163,9 +162,7 @@ export default function AdminDashboard() {
 
 
   return (
-    <div className="min-h-screen bg-stone-50 font-sans">
-      <Navbar />
-
+    <div className="min-h-screen bg-stone-50 font-sans flex">
       {toast && (
         <div className={`fixed bottom-6 right-6 z-[100] flex items-center gap-2.5 px-4 py-3 rounded-xl text-[13.5px] font-semibold shadow-lg border ${
           toast.type === "error"
@@ -177,30 +174,33 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      <div className="flex pt-[68px] min-h-screen">
-        <AdminSidebar
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          pendingCount={guideCounts.pending}
-          sidebarOpen={sidebarOpen}
-          setSidebarOpen={setSidebarOpen}
-        />
+      <AdminSidebar
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        pendingCount={guideCounts.pending}
+        sidebarOpen={sidebarOpen}
+        setSidebarOpen={setSidebarOpen}
+      />
 
-        <main className="flex-1 md:ml-[260px] min-w-0">
-          {/* Mobile header */}
-          <div className="md:hidden flex items-center gap-3 px-5 py-3 border-b border-stone-200 bg-white">
-            <button
-              onClick={(e) => { e.stopPropagation(); setSidebarOpen(true); }}
-              className="p-2 rounded-lg bg-stone-100 border border-stone-200 text-stone-600"
-            >
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <path d="M2 4h12M2 8h12M2 12h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-              </svg>
-            </button>
-            <span className="text-[13px] text-stone-600 font-medium">
-              {NAV_ITEMS.find((n) => n.id === activeTab)?.label}
-            </span>
-          </div>
+      <main className="flex-1 md:ml-[260px] min-w-0">
+        {/* Mobile header */}
+        <div className="md:hidden flex items-center justify-between px-5 py-3 border-b border-stone-200 bg-white sticky top-0 z-30">
+          <button
+            onClick={(e) => { e.stopPropagation(); setSidebarOpen(true); }}
+            className="p-2 rounded-lg bg-stone-100 border border-stone-200 text-stone-600"
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M2 4h12M2 8h12M2 12h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+          </button>
+          <Link to="/" className="flex items-center gap-2">
+            <span className="text-forest-500"><svg width="20" height="20" viewBox="0 0 28 28" fill="none"><path d="M14 2L26 24H2L14 2Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" /></svg></span>
+            <span className="font-serif text-[0.9rem] font-semibold text-stone-900">TrekDirect<span className="text-forest-500">Nepal</span></span>
+          </Link>
+          <span className="text-[12px] text-stone-400">
+            {NAV_ITEMS.find((n) => n.id === activeTab)?.label}
+          </span>
+        </div>
 
           <div className="px-6 sm:px-10 py-8 w-full">
             {activeTab === "overview" && (
@@ -235,7 +235,6 @@ export default function AdminDashboard() {
             {activeTab === "settings" && <SettingsSection />}
           </div>
         </main>
-      </div>
     </div>
   );
 }
