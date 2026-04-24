@@ -72,6 +72,13 @@ export default function PaymentModal({ booking, onClose, onPaid }) {
   const [amount, setAmount] = useState(0);
   const [error, setError] = useState("");
 
+  // Close on Escape
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === "Escape") onClose?.(); };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
   useEffect(() => {
     if (!booking?._id) return;
     paymentService

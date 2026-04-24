@@ -1,10 +1,23 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { formatNPR } from "../../utils/money";
+import BookingModal from "./BookingModal";
 
 export default function GuideCard({ guide }) {
   const [imgErr, setImgErr] = useState(false);
+  const [bookingOpen, setBookingOpen] = useState(false);
+  const navigate = useNavigate();
   const photo = guide.user?.profilePhoto;
+
+  function handleBookClick(e) {
+    e.preventDefault();
+    // Must be logged in to book. Defer to the login page and preserve intent.
+    if (!localStorage.getItem("token")) {
+      navigate("/login");
+      return;
+    }
+    setBookingOpen(true);
+  }
 
   return (
     <div className="group flex flex-col bg-white border border-stone-100 rounded-xl p-6 hover:border-stone-300 transition-colors">
@@ -29,8 +42,9 @@ export default function GuideCard({ guide }) {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 mb-1">
             <h3 className="text-[15px] font-medium text-stone-900">{guide.name}</h3>
-            {guide.verified && (
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" title="NTB Verified">
+            {guide.status === "verified" && (
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                <title>NTB Verified</title>
                 <path d="M8 1.5L3 4v5c0 3.314 2.24 5.397 5 6 2.76-.603 5-2.686 5-6V4L8 1.5z" fill="#2D6A4F" />
                 <path d="M5.5 8l1.75 1.75 3.25-3.25" stroke="white" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
@@ -40,9 +54,9 @@ export default function GuideCard({ guide }) {
             {guide.specialty} · {guide.experience} yrs
           </div>
           <div className="flex items-center gap-1.5 mt-1.5 text-[12px] text-stone-500">
-            <span className="text-stone-900 font-medium tabular-nums">{guide.rating}</span>
+            <span className="text-stone-900 font-medium tabular-nums">{guide.rating ? Number(guide.rating).toFixed(1) : "—"}</span>
             <span className="text-stone-300">·</span>
-            <span>{guide.reviews} reviews</span>
+            <span>{guide.reviews} review{guide.reviews !== 1 ? "s" : ""}</span>
           </div>
         </div>
       </div>
@@ -83,13 +97,21 @@ export default function GuideCard({ guide }) {
         >
           View profile
         </Link>
-        <button className="inline-flex items-center gap-1.5 text-[13px] font-medium text-forest-600 hover:text-forest-700 transition-colors group/cta">
+        <button
+          type="button"
+          onClick={handleBookClick}
+          className="inline-flex items-center gap-1.5 text-[13px] font-medium text-forest-600 hover:text-forest-700 transition-colors group/cta bg-transparent border-none cursor-pointer"
+        >
           Book now
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="transition-transform group-hover/cta:translate-x-0.5">
             <path d="M2 6h8M6 2l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </button>
       </div>
+
+      {bookingOpen && (
+        <BookingModal guide={guide} onClose={() => setBookingOpen(false)} />
+      )}
     </div>
   );
 }

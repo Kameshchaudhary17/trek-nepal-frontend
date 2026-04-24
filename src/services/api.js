@@ -118,6 +118,26 @@ const authService = {
     }
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    // Tear down any live socket.io connection after logout.
+    try {
+      const { disconnectSocket } = await import('./socket.js');
+      disconnectSocket();
+    } catch { /* socket module optional */ }
+  },
+};
+
+export const notificationService = {
+  list(params = {}) {
+    const qs = new URLSearchParams(
+      Object.fromEntries(Object.entries(params).filter(([, v]) => v !== undefined && v !== '' && v !== null))
+    ).toString();
+    return request(`/notifications${qs ? `?${qs}` : ''}`, { headers: authHeader() });
+  },
+  markRead(id) {
+    return request(`/notifications/${id}/read`, { method: 'POST', headers: authHeader() });
+  },
+  markAllRead() {
+    return request('/notifications/read-all', { method: 'POST', headers: authHeader() });
   },
 };
 
@@ -152,6 +172,13 @@ const guideService = {
   getMyEarnings() {
     return request('/guides/me/earnings', { headers: authHeader() });
   },
+
+  reapply() {
+    return request('/guides/me/reapply', {
+      method: 'POST',
+      headers: authHeader(),
+    });
+  },
 };
 
 function authHeader() {
@@ -165,11 +192,12 @@ const adminService = {
     return request(`/guides/admin${qs}`, { headers: authHeader() });
   },
 
-  setGuideStatus(id, status) {
+  setGuideStatus(id, status, reason) {
+    const body = reason ? { status, reason } : { status };
     return request(`/guides/admin/${id}/status`, {
       method: 'PATCH',
       headers: authHeader(),
-      body: JSON.stringify({ status }),
+      body: JSON.stringify(body),
     });
   },
 
@@ -180,6 +208,13 @@ const adminService = {
 
   getStats() {
     return request('/users/admin/stats', { headers: authHeader() });
+  },
+
+  listBookings(params = {}) {
+    const qs = new URLSearchParams(
+      Object.fromEntries(Object.entries(params).filter(([, v]) => v !== undefined && v !== '' && v !== null))
+    ).toString();
+    return request(`/bookings/admin${qs ? `?${qs}` : ''}`, { headers: authHeader() });
   },
 };
 
@@ -267,6 +302,19 @@ export const reviewService = {
       body: JSON.stringify({ rating, comment }),
     });
   },
+  update(bookingId, { rating, comment }) {
+    return request(`/bookings/${bookingId}/review`, {
+      method: 'PATCH',
+      headers: authHeader(),
+      body: JSON.stringify({ rating, comment }),
+    });
+  },
+  remove(bookingId) {
+    return request(`/bookings/${bookingId}/review`, {
+      method: 'DELETE',
+      headers: authHeader(),
+    });
+  },
 };
 
 export const paymentService = {
@@ -290,8 +338,29 @@ export const messageService = {
       body: JSON.stringify({ text }),
     });
   },
+  markRead(bookingId) {
+    return request(`/bookings/${bookingId}/messages/read`, {
+      method: 'POST',
+      headers: authHeader(),
+    });
+  },
   unreadCount() {
     return request('/messages/unread', { headers: authHeader() });
+  },
+};
+
+export const aiService = {
+  priceCheck(payload) {
+    return request('/ai/price-check', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+  permits(trekId) {
+    return request(`/ai/permits/${encodeURIComponent(trekId)}`);
+  },
+  planner(trekId) {
+    return request(`/ai/planner/${encodeURIComponent(trekId)}`);
   },
 };
 

@@ -4,6 +4,7 @@ import SidebarAvatarMenu from "../components/ui/SidebarAvatarMenu";
 import ImageUpload from "../components/ui/ImageUpload";
 import authService, { guideService, pricingService, bookingService } from "../services/api";
 import { formatNPR } from "../utils/money";
+import ChatModal from "../components/messages/ChatModal";
 
 /* ── Sidebar nav items ───────────────────────────────────────────── */
 const NAV = [
@@ -309,6 +310,16 @@ export default function GuideDashboard() {
           </div>
 
           <div className="px-6 sm:px-10 py-8">
+            {isRejected && (
+              <RejectionBanner
+                reason={guide.rejectionReason}
+                onReapplied={async () => {
+                  const data = await guideService.getMyProfile();
+                  setGuide(data.guide || null);
+                }}
+                showToast={showToast}
+              />
+            )}
             {activeTab === "overview"  && <OverviewTab user={user} guide={guide} setActiveTab={setActiveTab} />}
             {activeTab === "profile"   && profileForm && <ProfileTab form={profileForm} updateForm={updateForm} toggleLanguage={toggleLanguage} onSave={saveProfile} saving={profileSaving} hasNationalId={!!guide?.nationalIdPublicId} userEmail={user.email} />}
             {activeTab === "rate"      && pricing && <RateTab guide={guide} pricing={pricing} selectedTier={selectedTier} setSelectedTier={setSelectedTier} rateInput={rateInput} setRateInput={setRateInput} onSave={saveRate} saving={rateSaving} />}
@@ -855,6 +866,7 @@ function BookingsTab() {
   const [loading,       setLoading]       = useState(true);
   const [activeTab,     setActiveTab]     = useState("All");
   const [actionState,   setActionState]   = useState({}); // { [id]: { open: 'confirm'|'reject', note: '', saving: false } }
+  const [chattingWith,  setChattingWith]  = useState(null);
 
   useEffect(() => {
     bookingService.getGuideBookings()
@@ -1025,7 +1037,7 @@ function BookingsTab() {
                       {booking.totalCost > 0 && (
                         <div>
                           <span className="text-[11px] uppercase tracking-[0.08em] text-stone-400 font-semibold">Est. cost</span>
-                          <p className="text-[13px] font-bold text-terra-500">${booking.totalCost.toLocaleString()}</p>
+                          <p className="text-[13px] font-bold text-terra-500">{formatNPR(booking.totalCost)}</p>
                         </div>
                       )}
                     </div>
@@ -1046,20 +1058,31 @@ function BookingsTab() {
                       </div>
                     )}
 
-                    {/* Pending actions */}
-                    {booking.status === "pending" && !action && (
-                      <div className="mt-3 flex gap-2">
+                    {/* Actions. Message button is always available on active
+                        bookings so the guide can reply to the trekker. */}
+                    {["pending", "confirmed", "completed"].includes(booking.status) && !action && (
+                      <div className="mt-3 flex gap-2 flex-wrap">
+                        {booking.status === "pending" && (
+                          <>
+                            <button
+                              onClick={() => openAction(booking._id, "confirm")}
+                              className="px-4 py-1.5 rounded-xl text-[12.5px] font-semibold bg-forest-500 text-white hover:bg-forest-600 transition-colors"
+                            >
+                              Confirm
+                            </button>
+                            <button
+                              onClick={() => openAction(booking._id, "reject")}
+                              className="px-4 py-1.5 rounded-xl text-[12.5px] font-semibold border border-red-200 text-red-600 hover:bg-red-50 transition-colors"
+                            >
+                              Reject
+                            </button>
+                          </>
+                        )}
                         <button
-                          onClick={() => openAction(booking._id, "confirm")}
-                          className="px-4 py-1.5 rounded-xl text-[12.5px] font-semibold bg-forest-500 text-white hover:bg-forest-600 transition-colors"
+                          onClick={() => setChattingWith(booking)}
+                          className="px-4 py-1.5 rounded-xl text-[12.5px] font-semibold border border-stone-200 text-stone-700 hover:bg-stone-50 transition-colors"
                         >
-                          Confirm
-                        </button>
-                        <button
-                          onClick={() => openAction(booking._id, "reject")}
-                          className="px-4 py-1.5 rounded-xl text-[12.5px] font-semibold border border-red-200 text-red-600 hover:bg-red-50 transition-colors"
-                        >
-                          Reject
+                          Message trekker
                         </button>
                       </div>
                     )}
@@ -1110,6 +1133,66 @@ function BookingsTab() {
           })}
         </div>
       )}
+
+      {chattingWith && (
+        <ChatModal booking={chattingWith} onClose={() => setChattingWith(null)} />
+      )}
+    </div>
+  );
+}
+
+/* ── Rejection banner ────────────────────────────────────────────── */
+function RejectionBanner({ reason, onReapplied, showToast }) {
+  const [submitting, setSubmitting] = useState(false);
+
+  async function handleReapply() {
+    setSubmitting(true);
+    try {
+      await guideService.reapply();
+      showToast?.("Re-application submitted — your profile is back to pending review.");
+      await onReapplied?.();
+    } catch (err) {
+      showToast?.(err?.response?.data?.message || "Couldn't re-apply. Try again.", "error");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <div className="bg-red-50 border border-red-200 rounded-2xl p-5 mb-6">
+      <div className="flex items-start gap-3 mb-3">
+        <div className="w-8 h-8 rounded-xl bg-red-100 border border-red-200 flex items-center justify-center shrink-0">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" className="text-red-600">
+            <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.4" />
+            <path d="M8 4v5M8 11.5v.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+          </svg>
+        </div>
+        <div className="flex-1 min-w-0">
+          <h3 className="font-serif text-[1rem] font-semibold text-red-700 mb-0.5">Your application was not approved</h3>
+          <p className="text-[12.5px] text-red-600/80">
+            The admin team has left a note below. Address it, then submit a re-application so they can review again.
+          </p>
+        </div>
+      </div>
+
+      {reason ? (
+        <div className="bg-white border border-red-200 rounded-xl p-3 mb-4">
+          <p className="text-[11px] uppercase tracking-[0.14em] text-red-500 font-semibold mb-1">Admin note</p>
+          <p className="text-[13px] text-stone-800 whitespace-pre-wrap leading-relaxed">{reason}</p>
+        </div>
+      ) : (
+        <div className="bg-white border border-red-200 rounded-xl p-3 mb-4 text-[12.5px] text-stone-500 italic">
+          No reason was recorded. Please contact support if you need clarification.
+        </div>
+      )}
+
+      <button
+        onClick={handleReapply}
+        disabled={submitting}
+        className="px-4 py-2 rounded-xl bg-red-500 text-white text-[13px] font-semibold hover:bg-red-600 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+      >
+        {submitting ? "Submitting…" : "Re-apply for verification"}
+      </button>
     </div>
   );
 }

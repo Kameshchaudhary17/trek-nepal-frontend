@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { reviewService } from "../../services/api";
 
 function Star({ filled, onClick, onMouseEnter }) {
@@ -17,12 +17,22 @@ function Star({ filled, onClick, onMouseEnter }) {
   );
 }
 
-export default function ReviewModal({ booking, onClose, onSubmitted }) {
-  const [rating, setRating] = useState(0);
-  const [hover, setHover] = useState(0);
-  const [comment, setComment] = useState("");
+/* ReviewModal covers both creation and editing.
+   When `existing` is provided, the form pre-fills and calls PATCH on submit. */
+export default function ReviewModal({ booking, existing = null, onClose, onSubmitted }) {
+  const isEdit = Boolean(existing);
+  const [rating, setRating]   = useState(existing?.rating || 0);
+  const [hover, setHover]     = useState(0);
+  const [comment, setComment] = useState(existing?.comment || "");
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError]     = useState("");
+
+  // Close on Escape
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === "Escape") onClose?.(); };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose]);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -33,10 +43,14 @@ export default function ReviewModal({ booking, onClose, onSubmitted }) {
     setSubmitting(true);
     setError("");
     try {
-      await reviewService.submit(booking._id, { rating, comment });
+      if (isEdit) {
+        await reviewService.update(booking._id, { rating, comment });
+      } else {
+        await reviewService.submit(booking._id, { rating, comment });
+      }
       onSubmitted?.();
     } catch (err) {
-      setError(err?.response?.data?.message || "Unable to submit review.");
+      setError(err?.response?.data?.message || (isEdit ? "Unable to update review." : "Unable to submit review."));
     } finally {
       setSubmitting(false);
     }
@@ -51,7 +65,9 @@ export default function ReviewModal({ booking, onClose, onSubmitted }) {
         onClick={(e) => e.stopPropagation()}
         className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6"
       >
-        <h3 className="font-serif text-[1.1rem] font-semibold text-stone-900 mb-1">Leave a review</h3>
+        <h3 className="font-serif text-[1.1rem] font-semibold text-stone-900 mb-1">
+          {isEdit ? "Edit your review" : "Leave a review"}
+        </h3>
         <p className="text-[12.5px] text-stone-500 mb-5">
           {booking?.route} with {booking?.guide?.user?.fullName || "your guide"}
         </p>
@@ -100,7 +116,7 @@ export default function ReviewModal({ booking, onClose, onSubmitted }) {
             disabled={submitting || rating < 1}
             className="flex-[2] px-4 py-2.5 rounded-xl bg-forest-500 text-white text-[13px] font-semibold hover:bg-forest-600 disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            {submitting ? "Submitting…" : "Submit review"}
+            {submitting ? (isEdit ? "Saving…" : "Submitting…") : (isEdit ? "Save changes" : "Submit review")}
           </button>
         </div>
       </form>

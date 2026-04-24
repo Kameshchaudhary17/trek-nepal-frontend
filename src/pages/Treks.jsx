@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import Navbar from "../components/ui/Navbar";
 import { treksService } from "../services/api";
 import { DIFFICULTY_LEVELS, REGIONS, DURATIONS } from "../data/treks.js";
+import { formatNPR } from "../utils/money";
 
 /* ── Helpers ──────────────────────────────────────────────────── */
 const SORT_OPTIONS = [
@@ -60,7 +61,7 @@ function TrekCard({ trek }) {
         <div className="flex items-start justify-between gap-4 mb-5">
           <h3 className="text-[1.15rem] font-medium text-stone-900 leading-snug">{trek.name}</h3>
           <div className="shrink-0 text-right">
-            <div className="text-[1rem] font-medium text-stone-900 tabular-nums leading-none">${trek.guideFrom}</div>
+            <div className="text-[1rem] font-medium text-stone-900 tabular-nums leading-none">{formatNPR(trek.guideFrom)}</div>
             <div className="text-[10.5px] text-stone-400 mt-1">from / person</div>
           </div>
         </div>
@@ -100,7 +101,7 @@ function TrekCard({ trek }) {
           >
             <span>
               {trek.permits.length} permit{trek.permits.length > 1 ? "s" : ""} required
-              <span className="text-stone-400"> · ${permitTotal} total</span>
+              <span className="text-stone-400"> · {formatNPR(permitTotal)} total</span>
             </span>
             <svg
               width="11" height="11" viewBox="0 0 12 12" fill="none"
@@ -114,7 +115,7 @@ function TrekCard({ trek }) {
               {trek.permits.map((p) => (
                 <div key={p.name} className="flex items-center justify-between text-[12px]">
                   <span className="text-stone-500">{p.name}</span>
-                  <span className="text-stone-700 tabular-nums">${p.cost}</span>
+                  <span className="text-stone-700 tabular-nums">{formatNPR(p.cost)}</span>
                 </div>
               ))}
             </div>

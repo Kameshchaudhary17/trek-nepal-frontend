@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import Navbar from "../components/ui/Navbar";
 import BookingModal from "../components/guides/BookingModal";
-import { guideService } from "../services/api";
+import { guideService, reviewService } from "../services/api";
 import { formatNPR } from "../utils/money";
 
 /* ── Star rating ─────────────────────────────────────────────── */
@@ -83,6 +83,8 @@ export default function GuideProfile() {
   const [error,        setError]        = useState(null);
   const [bookingOpen,  setBookingOpen]  = useState(false);
   const [copied,       setCopied]       = useState(false);
+  const [reviewList,    setReviewList]    = useState([]);
+  const [reviewsLoading, setReviewsLoading] = useState(true);
 
   useEffect(() => {
     setLoading(true);
@@ -93,6 +95,14 @@ export default function GuideProfile() {
         setError(status === 404 ? "Guide not found." : "Failed to load profile. Please try again.");
       })
       .finally(() => setLoading(false));
+  }, [id]);
+
+  useEffect(() => {
+    setReviewsLoading(true);
+    reviewService.forGuide(id, { limit: 20 })
+      .then((data) => setReviewList(data.reviews || []))
+      .catch(() => setReviewList([]))
+      .finally(() => setReviewsLoading(false));
   }, [id]);
 
   function copyLink() {
@@ -321,9 +331,15 @@ export default function GuideProfile() {
               </Card>
             )}
 
-            {/* Reviews placeholder */}
+            {/* Reviews */}
             <Card title="Trekker Reviews" icon="★">
-              {reviews === 0 ? (
+              {reviewsLoading ? (
+                <div className="space-y-3">
+                  {[1, 2].map((n) => (
+                    <div key={n} className="h-20 rounded-xl bg-stone-100 animate-pulse" />
+                  ))}
+                </div>
+              ) : reviewList.length === 0 ? (
                 <div className="flex flex-col items-center py-8 text-center">
                   <div className="w-12 h-12 rounded-2xl bg-stone-100 border border-stone-200 flex items-center justify-center text-xl mb-3">
                     📝
@@ -334,15 +350,32 @@ export default function GuideProfile() {
                   </p>
                 </div>
               ) : (
-                <div className="flex items-center gap-4 p-4 bg-amber-50 border border-amber-100 rounded-xl">
-                  <div className="text-center shrink-0">
-                    <div className="font-serif text-[2.5rem] font-bold text-amber-600 leading-none">{rating.toFixed(1)}</div>
-                    <Stars n={rating} size={13} />
-                    <div className="text-[11px] text-stone-400 mt-1">{reviews} reviews</div>
+                <div className="space-y-4">
+                  {/* Aggregate header */}
+                  <div className="flex items-center gap-4 p-4 bg-amber-50 border border-amber-100 rounded-xl">
+                    <div className="text-center shrink-0">
+                      <div className="font-serif text-[2.25rem] font-bold text-amber-600 leading-none">{rating.toFixed(1)}</div>
+                      <Stars n={rating} size={13} />
+                      <div className="text-[11px] text-stone-400 mt-1">{reviews} review{reviews !== 1 ? "s" : ""}</div>
+                    </div>
+                    <div className="text-[13px] text-stone-600 leading-relaxed">
+                      <p className="font-medium text-stone-800 mb-0.5">Verified trekker reviews</p>
+                      <p className="text-[12.5px] text-stone-500">
+                        Only trekkers who completed a booked trek with {name.split(" ")[0]} can leave a review.
+                      </p>
+                    </div>
                   </div>
-                  <p className="text-[13px] text-stone-500 leading-relaxed">
-                    Full review display coming soon. This guide has received <strong>{reviews}</strong> verified reviews from trekkers.
-                  </p>
+
+                  {/* Individual reviews */}
+                  {reviewList.map((r) => (
+                    <ReviewRow key={r._id} review={r} />
+                  ))}
+
+                  {reviewList.length < reviews && (
+                    <p className="text-center text-[12px] text-stone-400 pt-2">
+                      Showing {reviewList.length} of {reviews} reviews
+                    </p>
+                  )}
                 </div>
               )}
             </Card>
@@ -432,6 +465,46 @@ export default function GuideProfile() {
           guide={{ ...guide, name }}
           onClose={() => setBookingOpen(false)}
         />
+      )}
+    </div>
+  );
+}
+
+/* ── Individual review row ──────────────────────────────────────── */
+function ReviewRow({ review }) {
+  const author = review.trekker?.fullName || "Trekker";
+  const initials = author.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase() || "T";
+  const date = review.createdAt
+    ? new Date(review.createdAt).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
+    : "";
+
+  return (
+    <div className="border border-stone-100 rounded-xl p-4 hover:border-stone-200 transition-colors">
+      <div className="flex items-start gap-3 mb-2">
+        {review.trekker?.profilePhoto ? (
+          <img
+            src={review.trekker.profilePhoto}
+            alt={author}
+            className="w-9 h-9 rounded-full object-cover shrink-0"
+            referrerPolicy="no-referrer"
+          />
+        ) : (
+          <div className="w-9 h-9 rounded-full bg-stone-100 border border-stone-200 flex items-center justify-center text-[11.5px] font-semibold text-stone-500 shrink-0">
+            {initials}
+          </div>
+        )}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <span className="text-[13.5px] font-semibold text-stone-800">{author}</span>
+            <Stars n={review.rating} size={12} />
+          </div>
+          <div className="text-[11.5px] text-stone-400">{date}</div>
+        </div>
+      </div>
+      {review.comment && (
+        <p className="text-[13px] text-stone-600 leading-relaxed whitespace-pre-wrap mt-1">
+          {review.comment}
+        </p>
       )}
     </div>
   );

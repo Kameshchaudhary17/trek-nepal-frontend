@@ -4,6 +4,8 @@ import SidebarAvatarMenu from "../components/ui/SidebarAvatarMenu";
 import ImageUpload from "../components/ui/ImageUpload";
 import authService, { bookingService } from "../services/api";
 import { formatNPR } from "../utils/money";
+import PaymentModal from "../components/payments/PaymentModal";
+import ChatModal from "../components/messages/ChatModal";
 
 const NAV = [
   { id: "overview",  label: "Overview",  icon: OverviewIcon  },
@@ -286,23 +288,36 @@ function ExploreTab() {
 
 /* ── Bookings Tab ───────────────────────────────────────────────── */
 const DASH_STATUS_BADGE = {
-  pending:   "bg-amber-50 border border-amber-200 text-amber-700",
-  confirmed: "bg-forest-50 border border-forest-200 text-forest-700",
-  rejected:  "bg-red-50 border border-red-200 text-red-600",
-  cancelled: "bg-stone-100 border border-stone-200 text-stone-500",
-  completed: "bg-blue-50 border border-blue-200 text-blue-700",
+  pending:   { cls: "bg-amber-50 border border-amber-200 text-amber-700",   label: "Awaiting guide" },
+  confirmed: { cls: "bg-forest-50 border border-forest-200 text-forest-700", label: "Guide confirmed" },
+  rejected:  { cls: "bg-red-50 border border-red-200 text-red-600",         label: "Guide declined" },
+  cancelled: { cls: "bg-stone-100 border border-stone-200 text-stone-500",  label: "Cancelled" },
+  completed: { cls: "bg-blue-50 border border-blue-200 text-blue-700",      label: "Completed" },
+};
+
+const PAY_BADGE = {
+  unpaid:     { cls: "bg-amber-50 border border-amber-200 text-amber-700",   label: "Unpaid" },
+  processing: { cls: "bg-sky-50 border border-sky-200 text-sky-700",         label: "Processing" },
+  paid:       { cls: "bg-forest-50 border border-forest-200 text-forest-700", label: "Paid" },
+  failed:     { cls: "bg-red-50 border border-red-200 text-red-600",         label: "Payment failed" },
+  refunded:   { cls: "bg-violet-50 border border-violet-200 text-violet-700", label: "Refunded" },
 };
 
 function DashBookingsTab() {
   const [bookings,   setBookings]   = useState([]);
   const [loading,    setLoading]    = useState(true);
   const [cancelling, setCancelling] = useState(null);
+  const [payingFor,  setPayingFor]  = useState(null);
+  const [chattingWith, setChattingWith] = useState(null);
+
+  function load() {
+    return bookingService.getMyBookings()
+      .then((res) => setBookings(res.bookings || []))
+      .catch(() => setBookings([]));
+  }
 
   useEffect(() => {
-    bookingService.getMyBookings()
-      .then((res) => setBookings(res.bookings || []))
-      .catch(() => setBookings([]))
-      .finally(() => setLoading(false));
+    load().finally(() => setLoading(false));
   }, []);
 
   async function handleCancel(bookingId) {
@@ -395,9 +410,16 @@ function DashBookingsTab() {
                         ) : (
                           <span className="text-[13.5px] font-semibold text-stone-900">{guideName}</span>
                         )}
-                        <span className={`inline-flex items-center px-2 py-px rounded-full text-[11px] font-medium capitalize ${DASH_STATUS_BADGE[booking.status] || DASH_STATUS_BADGE.pending}`}>
-                          {booking.status}
-                        </span>
+                        {(() => {
+                          const s = DASH_STATUS_BADGE[booking.status] || DASH_STATUS_BADGE.pending;
+                          return <span className={`inline-flex items-center px-2 py-px rounded-full text-[11px] font-medium ${s.cls}`}>{s.label}</span>;
+                        })()}
+                        {/* Payment pill — only shown once the guide has confirmed.
+                            Before that, payment isn't due so the status is noise. */}
+                        {["confirmed", "completed"].includes(booking.status) && (() => {
+                          const p = PAY_BADGE[booking.paymentStatus] || PAY_BADGE.unpaid;
+                          return <span className={`inline-flex items-center px-2 py-px rounded-full text-[11px] font-medium ${p.cls}`}>{p.label}</span>;
+                        })()}
                       </div>
                       <div className="text-[12px] text-stone-400 truncate">
                         {booking.route || "—"} &middot; {booking.days} day{booking.days !== 1 ? "s" : ""}
@@ -405,32 +427,68 @@ function DashBookingsTab() {
                       </div>
                     </div>
 
-                    {/* Cancel action */}
-                    {(booking.status === "pending" || booking.status === "confirmed") && (
-                      <button
-                        disabled={cancelling === booking._id}
-                        onClick={() => handleCancel(booking._id)}
-                        className="px-3 py-1 rounded-lg text-[12px] font-semibold border border-red-200 text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50 shrink-0"
-                      >
-                        {cancelling === booking._id ? "…" : "Cancel"}
-                      </button>
-                    )}
+                    {/* Inline actions — Pay takes priority so it's visible without deep clicks.
+                        Status pills above already show payment state, so we only surface the
+                        Pay button here when there's something actionable. */}
+                    <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+                      {booking.status === "confirmed" && (!booking.paymentStatus || booking.paymentStatus === "unpaid" || booking.paymentStatus === "failed") && (
+                        <button
+                          onClick={() => setPayingFor(booking)}
+                          className="px-3 py-1.5 rounded-lg text-[12px] font-semibold bg-forest-500 text-white hover:bg-forest-600 transition-colors"
+                        >
+                          Pay {formatNPR(booking.totalCost)}
+                        </button>
+                      )}
+                      {(booking.status === "pending" || booking.status === "confirmed") && (
+                        <>
+                          <button
+                            onClick={() => setChattingWith(booking)}
+                            className="px-3 py-1.5 rounded-lg text-[12px] font-semibold border border-stone-200 text-stone-700 hover:bg-stone-50 transition-colors"
+                          >
+                            Message
+                          </button>
+                          <button
+                            disabled={cancelling === booking._id}
+                            onClick={() => handleCancel(booking._id)}
+                            className="px-3 py-1.5 rounded-lg text-[12px] font-semibold border border-red-200 text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
+                          >
+                            {cancelling === booking._id ? "…" : "Cancel"}
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
               );
             })}
           </div>
 
-          <Link
-            to="/bookings"
-            className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-forest-600 hover:text-forest-700 transition-colors"
-          >
-            View all bookings
-            <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-              <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </Link>
+          {bookings.length > 5 && (
+            <Link
+              to="/bookings"
+              className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-forest-600 hover:text-forest-700 transition-colors"
+            >
+              View all {bookings.length} bookings
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </Link>
+          )}
         </>
+      )}
+
+      {payingFor && (
+        <PaymentModal
+          booking={payingFor}
+          onClose={() => setPayingFor(null)}
+          onPaid={() => {
+            setPayingFor(null);
+            load();
+          }}
+        />
+      )}
+      {chattingWith && (
+        <ChatModal booking={chattingWith} onClose={() => setChattingWith(null)} />
       )}
     </div>
   );

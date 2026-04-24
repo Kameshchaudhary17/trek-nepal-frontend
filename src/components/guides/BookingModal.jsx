@@ -1,23 +1,72 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { bookingService } from "../../services/api";
+import { bookingService, treksService, pricingService, aiService } from "../../services/api";
 import { formatNPR } from "../../utils/money";
 
 const TODAY = new Date().toISOString().split("T")[0];
 
+/* Route is derived from the guide's own profile — trekker never types it.
+     Priority: URL trek filter → guide.specialty → first listed route → region label. */
+function resolveRoute(guide) {
+  try {
+    const fromUrl = new URLSearchParams(window.location.search).get("trek");
+    if (fromUrl && fromUrl.trim()) return fromUrl.trim();
+  } catch { /* no-window fallback */ }
+  if (guide?.specialty && guide.specialty !== "Multi-Route") return guide.specialty;
+  if (guide?.routes?.length > 0) return guide.routes[0];
+  if (guide?.region) return `${guide.region} region`;
+  return "";
+}
+
 export default function BookingModal({ guide, onClose }) {
   const navigate = useNavigate();
+  const resolvedRoute = resolveRoute(guide);
   const [step,     setStep]     = useState(1); // 1 = form, 2 = success
   const [form,     setForm]     = useState({
-    trek:    guide.routes?.[0] || "",
     start:   "",
-    days:    guide.experience > 0 ? "7" : "7",
+    days:    "7",
     message: "",
   });
   const [errors,   setErrors]   = useState({});
   const [loading,  setLoading]  = useState(false);
   const [apiError, setApiError] = useState("");
   const overlayRef = useRef(null);
+
+  // Fair-rate check (AI endpoint) + static lookup caches.
+  const [treks, setTreks] = useState([]);
+  const [tiers, setTiers] = useState([]);
+  const [fair, setFair]   = useState(null);      // { range, season, tier }
+  const [fairLoading, setFairLoading] = useState(false);
+
+  useEffect(() => {
+    // One-shot reference data. Needed to resolve trek name → _id and guide rate → tier.
+    Promise.all([treksService.getTreks(), pricingService.getConfig()])
+      .then(([t, cfg]) => {
+        setTreks(t.treks || []);
+        setTiers(cfg.guideTiers || []);
+      })
+      .catch(() => { /* fair-rate widget is non-critical; fail silent */ });
+  }, []);
+
+  useEffect(() => {
+    // Ask the AI helper for a fair range whenever the route + date + days are known.
+    if (!resolvedRoute || !form.start || !Number(form.days)) { setFair(null); return; }
+    const trek = treks.find((t) => t.name === resolvedRoute);
+    if (!trek) { setFair(null); return; }
+    const tier = tiers.find(
+      (ti) => guide.ratePerDay >= (ti.ratePerDay?.min ?? 0) && guide.ratePerDay <= (ti.ratePerDay?.max ?? Infinity)
+    ) || tiers[0];
+    if (!tier) { setFair(null); return; }
+
+    let cancelled = false;
+    setFairLoading(true);
+    aiService
+      .priceCheck({ trekId: trek._id, startDate: form.start, days: Number(form.days), tierId: tier.id })
+      .then((res) => { if (!cancelled) setFair(res); })
+      .catch(() => { if (!cancelled) setFair(null); })
+      .finally(() => { if (!cancelled) setFairLoading(false); });
+    return () => { cancelled = true; };
+  }, [resolvedRoute, form.start, form.days, treks, tiers, guide.ratePerDay]);
 
   /* close on Escape */
   useEffect(() => {
@@ -50,6 +99,13 @@ export default function BookingModal({ guide, onClose }) {
     e.preventDefault();
     if (!validate()) return;
 
+    // Defensive: if the guide has no trek info on their profile, we can't derive
+    // a route to send. Surface the problem instead of blaming the backend.
+    if (!resolvedRoute) {
+      setApiError("This guide hasn't set any trek routes yet. Please try another guide.");
+      return;
+    }
+
     const token = localStorage.getItem("token");
     if (!token) {
       navigate("/login");
@@ -61,7 +117,7 @@ export default function BookingModal({ guide, onClose }) {
     try {
       await bookingService.create({
         guideId: guide._id,
-        route: form.trek,
+        route: resolvedRoute,
         startDate: form.start,
         days: Number(form.days),
         message: form.message,
@@ -139,20 +195,20 @@ export default function BookingModal({ guide, onClose }) {
                 )}
               </div>
 
-              {/* Trek route */}
-              {guide.routes?.length > 0 && (
-                <div>
-                  <label className="block text-[11.5px] font-semibold text-stone-500 uppercase tracking-[0.1em] mb-1.5">
+              {/* Guide's trek coverage — read-only context so the trekker knows
+                  where this guide operates. The booked route is the primary one
+                  (URL trek filter → specialty → first route) resolved above. */}
+              {(guide.routes?.length > 0 || resolvedRoute) && (
+                <div className="p-3 rounded-xl bg-forest-50/40 border border-forest-100">
+                  <p className="text-[11px] uppercase tracking-[0.12em] text-forest-700 font-semibold mb-1.5">
                     Trek route
-                  </label>
-                  <select
-                    value={form.trek}
-                    onChange={(e) => set("trek", e.target.value)}
-                    className="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2.5 text-[13.5px] text-stone-800 outline-none focus:border-forest-400 focus:ring-2 focus:ring-forest-100 transition-colors"
-                  >
-                    {guide.routes.map((r) => <option key={r} value={r}>{r}</option>)}
-                    <option value="">Other / not listed</option>
-                  </select>
+                  </p>
+                  <p className="text-[13.5px] font-semibold text-stone-800">{resolvedRoute || "—"}</p>
+                  {guide.routes?.length > 1 && (
+                    <p className="text-[11.5px] text-stone-500 mt-1.5 leading-snug">
+                      {guide.name?.split(" ")[0] || "This guide"} also covers: {guide.routes.filter((r) => r !== resolvedRoute).join(", ")}
+                    </p>
+                  )}
                 </div>
               )}
 
@@ -195,6 +251,30 @@ export default function BookingModal({ guide, onClose }) {
                   <span className="font-bold text-forest-800">{formatNPR(cost)}</span>
                 </div>
               )}
+
+              {/* AI fair-rate check — compares guide's total against the
+                  tier-band × seasonal multiplier suggested by /api/ai/price-check. */}
+              {fairLoading && (
+                <div className="text-[12px] text-stone-400 italic px-1">Checking fair-rate range…</div>
+              )}
+              {fair && !fairLoading && (() => {
+                const min = fair.estimate.guideRange.min;
+                const max = fair.estimate.guideRange.max;
+                const status = cost < min ? "below" : cost > max ? "above" : "fair";
+                const styles = {
+                  fair:  { bg: "bg-forest-50",  border: "border-forest-200",  text: "text-forest-700", label: "Within fair range for this season ✓" },
+                  below: { bg: "bg-sky-50",     border: "border-sky-200",     text: "text-sky-700",    label: "Below the typical fair range — great deal" },
+                  above: { bg: "bg-amber-50",   border: "border-amber-200",   text: "text-amber-700",  label: "Above the typical fair range" },
+                }[status];
+                return (
+                  <div className={`p-3 rounded-xl border ${styles.bg} ${styles.border} text-[12.5px] ${styles.text} space-y-1`}>
+                    <div className="font-semibold">{styles.label}</div>
+                    <div className="text-stone-500">
+                      Fair range ({fair.tier?.label}, {fair.season?.id}): {formatNPR(min)} – {formatNPR(max)}
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* Message */}
               <div>
@@ -251,7 +331,7 @@ export default function BookingModal({ guide, onClose }) {
             </p>
             <div className="w-full p-4 rounded-xl bg-stone-50 border border-stone-200 text-left mb-6 space-y-2.5">
               {[
-                { label: "Route",  value: form.trek || "Not specified" },
+                { label: "Route",  value: resolvedRoute || "Not specified" },
                 { label: "Start",  value: form.start ? new Date(form.start + "T00:00").toLocaleDateString("en-US", { day: "numeric", month: "long", year: "numeric" }) : "—" },
                 { label: "Duration", value: `${form.days} day${Number(form.days) !== 1 ? "s" : ""}` },
                 ...(cost ? [{ label: "Est. guide cost", value: formatNPR(cost) }] : []),

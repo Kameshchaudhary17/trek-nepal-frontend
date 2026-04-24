@@ -1,14 +1,16 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Navbar from "../components/ui/Navbar";
+import { formatNPR } from "../utils/money";
 
+/* Landing-page showcase. Values in NPR matching Trek seed data. */
 const ROUTES = [
-  { id: 1, name: "Everest Base Camp", region: "Khumbu", days: "12–16", difficulty: "Hard", altitude: "5,364m", priceFrom: 800, season: "Oct–Nov, Mar–May", color: "#2D6A4F", tags: ["Classic", "Most Popular"] },
-  { id: 2, name: "Annapurna Circuit", region: "Gandaki", days: "14–21", difficulty: "Moderate–Hard", altitude: "5,416m", priceFrom: 700, season: "Oct–Nov, Mar–Apr", color: "#5E6BAD", tags: ["Scenic", "High Pass"] },
-  { id: 3, name: "Langtang Valley", region: "Bagmati", days: "7–10", difficulty: "Moderate", altitude: "3,870m", priceFrom: 400, season: "Oct–Nov, Mar–May", color: "#3D8A68", tags: ["Family Friendly"] },
-  { id: 4, name: "Manaslu Circuit", region: "Gandaki", days: "14–18", difficulty: "Hard", altitude: "5,106m", priceFrom: 900, season: "Sep–Nov, Mar–May", color: "#C05621", tags: ["Remote", "Off-beaten"] },
-  { id: 5, name: "Gokyo Lakes", region: "Khumbu", days: "12–15", difficulty: "Moderate–Hard", altitude: "5,357m", priceFrom: 750, season: "Oct–Nov, Mar–May", color: "#2E7A8A", tags: ["Lakes", "Panoramic"] },
-  { id: 6, name: "Upper Mustang", region: "Gandaki", days: "10–14", difficulty: "Moderate", altitude: "3,840m", priceFrom: 1500, season: "May–Oct", color: "#8B6914", tags: ["Restricted Area", "Cultural"] },
+  { id: 1, name: "Everest Base Camp", region: "Khumbu", days: "12–16", difficulty: "Hard", altitude: "5,364m", priceFrom: 110000, season: "Oct–Nov, Mar–May", color: "#2D6A4F", tags: ["Classic", "Most Popular"] },
+  { id: 2, name: "Annapurna Circuit", region: "Gandaki", days: "14–21", difficulty: "Moderate–Hard", altitude: "5,416m", priceFrom: 95000, season: "Oct–Nov, Mar–Apr", color: "#5E6BAD", tags: ["Scenic", "High Pass"] },
+  { id: 3, name: "Langtang Valley", region: "Bagmati", days: "7–10", difficulty: "Moderate", altitude: "3,870m", priceFrom: 54000, season: "Oct–Nov, Mar–May", color: "#3D8A68", tags: ["Family Friendly"] },
+  { id: 4, name: "Manaslu Circuit", region: "Gandaki", days: "14–18", difficulty: "Hard", altitude: "5,106m", priceFrom: 122000, season: "Sep–Nov, Mar–May", color: "#C05621", tags: ["Remote", "Off-beaten"] },
+  { id: 5, name: "Gokyo Lakes", region: "Khumbu", days: "12–15", difficulty: "Moderate–Hard", altitude: "5,357m", priceFrom: 100000, season: "Oct–Nov, Mar–May", color: "#2E7A8A", tags: ["Lakes", "Panoramic"] },
+  { id: 6, name: "Upper Mustang", region: "Gandaki", days: "10–14", difficulty: "Moderate", altitude: "3,840m", priceFrom: 200000, season: "May–Oct", color: "#8B6914", tags: ["Restricted Area", "Cultural"] },
 ];
 
 const GUIDES = [
@@ -82,7 +84,7 @@ function RouteCard({ route }) {
         <div className="flex items-start justify-between gap-4 mb-5">
           <h3 className="text-[1.1rem] font-medium text-stone-900 leading-snug">{route.name}</h3>
           <div className="shrink-0 text-right">
-            <div className="text-[1rem] font-medium text-stone-900 tabular-nums leading-none">${route.priceFrom}</div>
+            <div className="text-[1rem] font-medium text-stone-900 tabular-nums leading-none">{formatNPR(route.priceFrom)}</div>
             <div className="text-[10.5px] text-stone-400 mt-1">from / person</div>
           </div>
         </div>

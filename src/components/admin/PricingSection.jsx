@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { pricingService } from "../../services/api";
 import SectionHeader from "./SectionHeader";
+import { formatNPR } from "../../utils/money";
 
 function Skeleton() {
   return (
@@ -18,8 +19,13 @@ export default function PricingSection({ showToast }) {
   const [loading, setLoading]         = useState(true);
   const [saving, setSaving]           = useState({});
 
-  // AI simulator state
-  const [aiFactor, setAiFactor]       = useState({ season: "Autumn", demand: 0.85, baseCost: 800 });
+  // Editable copies of config values — hydrated after fetch.
+  const [porterMin, setPorterMin]     = useState("");
+  const [porterMax, setPorterMax]     = useState("");
+  const [tierDraft, setTierDraft]     = useState([]); // [{id, min, max}]
+
+  // AI simulator state (local-only "what if" widget — not the real AI endpoints)
+  const [aiFactor, setAiFactor]       = useState({ season: "Autumn", demand: 0.85, baseCost: 100000 });
   const [aiResult, setAiResult]       = useState(null);
 
   useEffect(() => {
@@ -27,12 +33,58 @@ export default function PricingSection({ showToast }) {
       .then((data) => {
         setTrekPrices(data.trekPrices.map((t) => ({ ...t, _minCost: t.baseCost.min, _maxCost: t.baseCost.max })));
         setConfig(data);
+        setPorterMin(String(data.porterRatePerDay?.min ?? ""));
+        setPorterMax(String(data.porterRatePerDay?.max ?? ""));
+        setTierDraft((data.guideTiers || []).map((t) => ({
+          id: t.id,
+          min: String(t.ratePerDay?.min ?? ""),
+          max: String(t.ratePerDay?.max ?? ""),
+        })));
       })
       .catch(() => showToast("Failed to load pricing data.", "error"))
       .finally(() => setLoading(false));
     // showToast is a stable setter from the parent — safe to omit.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  async function savePorterRate() {
+    const min = Number(porterMin);
+    const max = Number(porterMax);
+    if (!Number.isFinite(min) || !Number.isFinite(max) || min < 0 || max < min) {
+      showToast("Porter rate must be two non-negative numbers with max ≥ min.", "error");
+      return;
+    }
+    try {
+      const res = await pricingService.adminUpdateConfig({ porterRatePerDay: { min, max } });
+      setConfig((c) => ({ ...c, porterRatePerDay: res.config.porterRatePerDay }));
+      showToast("Porter rate updated.");
+    } catch {
+      showToast("Failed to update porter rate.", "error");
+    }
+  }
+
+  async function saveTiers() {
+    for (const t of tierDraft) {
+      const min = Number(t.min);
+      const max = Number(t.max);
+      if (!Number.isFinite(min) || !Number.isFinite(max) || min < 0 || max < min) {
+        showToast(`Tier ${t.id}: invalid range.`, "error");
+        return;
+      }
+    }
+    const merged = (config.guideTiers || []).map((orig) => {
+      const d = tierDraft.find((x) => x.id === orig.id);
+      if (!d) return orig;
+      return { ...orig, ratePerDay: { min: Number(d.min), max: Number(d.max) } };
+    });
+    try {
+      const res = await pricingService.adminUpdateConfig({ guideTiers: merged });
+      setConfig((c) => ({ ...c, guideTiers: res.config.guideTiers }));
+      showToast("Guide tiers updated.");
+    } catch {
+      showToast("Failed to update guide tiers.", "error");
+    }
+  }
 
   function updateLocal(trekId, field, val) {
     setTrekPrices((prev) =>
@@ -89,7 +141,7 @@ export default function PricingSection({ showToast }) {
             <div className="px-5 py-4 border-b border-stone-200 bg-stone-50 flex items-center justify-between">
               <div>
                 <h3 className="font-serif text-[1rem] font-semibold text-stone-900">Base Cost Ranges</h3>
-                <p className="text-[12px] text-stone-500 mt-0.5">Min and max per-person cost in USD · edit and save per row</p>
+                <p className="text-[12px] text-stone-500 mt-0.5">Min and max per-person cost in NPR · edit and save per row</p>
               </div>
               {config && (
                 <span className="text-[10px] px-2 py-0.5 rounded-full bg-forest-100 border border-forest-200 text-forest-700 font-semibold">
@@ -104,7 +156,7 @@ export default function PricingSection({ showToast }) {
                     <tr className="text-stone-500 text-[11px] uppercase tracking-wide">
                       <th className="text-left py-3 px-5 font-semibold">Trek</th>
                       <th className="text-left py-3 px-5 font-semibold">Duration</th>
-                      <th className="text-left py-3 px-5 font-semibold">Cost Range ($)</th>
+                      <th className="text-left py-3 px-5 font-semibold">Cost Range (Rs.)</th>
                       <th className="text-left py-3 px-5 font-semibold">Permits</th>
                       <th className="py-3 px-5" />
                     </tr>
@@ -141,7 +193,7 @@ export default function PricingSection({ showToast }) {
                             </div>
                           </td>
                           <td className="py-3.5 px-5 text-stone-600 text-[13px]">
-                            ${permitTotal}
+                            {formatNPR(permitTotal)}
                             <div className="text-[11px] text-stone-400">{t.permits?.length ?? 0} required</div>
                           </td>
                           <td className="py-3.5 px-5 text-right">
@@ -192,28 +244,88 @@ export default function PricingSection({ showToast }) {
             </div>
           </div>
 
-          {/* Guide tier bands (read-only overview) */}
+          {/* Guide tier bands (editable) */}
           {config && (
             <div className="bg-white border border-stone-200 rounded-2xl overflow-hidden">
-              <div className="px-5 py-4 border-b border-stone-200 bg-stone-50">
-                <h3 className="font-serif text-[1rem] font-semibold text-stone-900">Guide Tier Rate Bands</h3>
-                <p className="text-[12px] text-stone-500 mt-0.5">Admin-defined daily rate limits that guides must quote within</p>
+              <div className="px-5 py-4 border-b border-stone-200 bg-stone-50 flex items-center justify-between">
+                <div>
+                  <h3 className="font-serif text-[1rem] font-semibold text-stone-900">Guide Tier Rate Bands</h3>
+                  <p className="text-[12px] text-stone-500 mt-0.5">Daily rate limits (NPR) that guides must quote within</p>
+                </div>
+                <button
+                  onClick={saveTiers}
+                  className="px-3 py-1.5 rounded-lg bg-forest-500 text-white text-[12px] font-semibold hover:bg-forest-600 transition-colors"
+                >
+                  Save tiers
+                </button>
               </div>
               <div className="divide-y divide-stone-100">
-                {config.guideTiers.map((g) => (
-                  <div key={g.id} className="px-5 py-4 flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-2.5">
-                      <span className="w-3 h-3 rounded-full shrink-0" style={{ background: g.color }} />
-                      <div>
-                        <div className="text-[13px] font-semibold text-stone-800">{g.label}</div>
-                        <div className="text-[11.5px] text-stone-400">{g.desc}</div>
+                {config.guideTiers.map((g, idx) => {
+                  const d = tierDraft[idx] || { min: "", max: "" };
+                  return (
+                    <div key={g.id} className="px-5 py-4 flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <span className="w-3 h-3 rounded-full shrink-0" style={{ background: g.color }} />
+                        <div className="min-w-0">
+                          <div className="text-[13px] font-semibold text-stone-800">{g.label}</div>
+                          <div className="text-[11.5px] text-stone-400 truncate">{g.desc}</div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <span className="text-[11px] text-stone-400">Rs.</span>
+                        <input
+                          type="number" min="0"
+                          value={d.min}
+                          onChange={(e) => setTierDraft((prev) => prev.map((x, i) => i === idx ? { ...x, min: e.target.value } : x))}
+                          className="w-[84px] bg-white border border-stone-200 rounded-lg py-1.5 px-2 text-terra-500 font-semibold text-[13px] focus:border-forest-400 focus:ring-1 focus:ring-forest-100 outline-none"
+                        />
+                        <span className="text-stone-400">–</span>
+                        <input
+                          type="number" min="0"
+                          value={d.max}
+                          onChange={(e) => setTierDraft((prev) => prev.map((x, i) => i === idx ? { ...x, max: e.target.value } : x))}
+                          className="w-[84px] bg-white border border-stone-200 rounded-lg py-1.5 px-2 text-terra-500 font-semibold text-[13px] focus:border-forest-400 focus:ring-1 focus:ring-forest-100 outline-none"
+                        />
+                        <span className="text-[11px] text-stone-400 ml-1">/day</span>
                       </div>
                     </div>
-                    <div className="text-[13px] font-semibold text-terra-500 shrink-0">
-                      ${g.ratePerDay.min}–${g.ratePerDay.max}<span className="text-[11px] font-normal text-stone-400">/day</span>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Porter rate (editable) */}
+          {config && (
+            <div className="bg-white border border-stone-200 rounded-2xl p-5">
+              <h3 className="font-serif text-[1rem] font-semibold text-stone-900 mb-1">Porter Rate (per day)</h3>
+              <p className="text-[12px] text-stone-500 mb-4">Shown in the Price Calculator when trekkers add porters to their estimate.</p>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-[12px] text-stone-400">Rs.</span>
+                <input
+                  type="number" min="0"
+                  value={porterMin}
+                  onChange={(e) => setPorterMin(e.target.value)}
+                  className="w-[100px] bg-stone-50 border border-stone-200 rounded-xl py-2.5 px-3 text-stone-800 text-[14px] font-semibold focus:border-forest-400 focus:ring-1 focus:ring-forest-100 outline-none"
+                />
+                <span className="text-stone-400">–</span>
+                <input
+                  type="number" min="0"
+                  value={porterMax}
+                  onChange={(e) => setPorterMax(e.target.value)}
+                  className="w-[100px] bg-stone-50 border border-stone-200 rounded-xl py-2.5 px-3 text-stone-800 text-[14px] font-semibold focus:border-forest-400 focus:ring-1 focus:ring-forest-100 outline-none"
+                />
+                <button
+                  onClick={savePorterRate}
+                  className="px-4 py-2.5 bg-forest-500 text-white rounded-xl text-[13px] font-semibold hover:bg-forest-600 transition-all"
+                >
+                  Update
+                </button>
+                {config.porterRatePerDay && (
+                  <span className="text-[12px] text-stone-400">
+                    Current: <strong className="text-stone-700">{formatNPR(config.porterRatePerDay.min)}–{formatNPR(config.porterRatePerDay.max)}</strong>
+                  </span>
+                )}
               </div>
             </div>
           )}
@@ -226,7 +338,7 @@ export default function PricingSection({ showToast }) {
 
           <div className="space-y-4 mb-5">
             <div>
-              <label className="block text-[11px] uppercase tracking-[0.14em] text-blue-700 font-semibold mb-1.5">Base Cost ($)</label>
+              <label className="block text-[11px] uppercase tracking-[0.14em] text-blue-700 font-semibold mb-1.5">Base Cost (Rs.)</label>
               <input
                 type="number"
                 value={aiFactor.baseCost}
@@ -275,7 +387,7 @@ export default function PricingSection({ showToast }) {
             <div className="border-t border-blue-200 pt-4">
               <div className="text-center mb-4">
                 <p className="text-[10px] uppercase tracking-widest text-blue-500 mb-1">Recommended Price</p>
-                <p className="font-serif text-[2.2rem] font-bold text-blue-700">${aiResult.price}</p>
+                <p className="font-serif text-[2.2rem] font-bold text-blue-700">{formatNPR(aiResult.price)}</p>
               </div>
               <div className="grid grid-cols-3 gap-2 text-center">
                 {[

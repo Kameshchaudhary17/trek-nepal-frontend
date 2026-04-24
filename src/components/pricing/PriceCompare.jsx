@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { formatNPR } from "../../utils/money";
 
 const DIFFICULTY_COLOR = {
   Hard: "bg-red-50 text-red-700 border-red-200",
@@ -144,9 +145,9 @@ export default function PriceCompare({ trekPrices, guideTiers, seasons }) {
                 </div>
 
                 <div className="space-y-1.5 text-[12px]">
-                  <div className="flex justify-between"><span className="text-stone-400">Base cost</span><span className="text-stone-700 font-medium">${base.toLocaleString()}</span></div>
-                  <div className="flex justify-between"><span className="text-stone-400">Guide ({avgDays}d)</span><span className="text-stone-700 font-medium">${guide.toLocaleString()}</span></div>
-                  <div className="flex justify-between"><span className="text-stone-400">Permits</span><span className="text-stone-700 font-medium">${permits}</span></div>
+                  <div className="flex justify-between"><span className="text-stone-400">Base cost</span><span className="text-stone-700 font-medium">{formatNPR(base)}</span></div>
+                  <div className="flex justify-between"><span className="text-stone-400">Guide ({avgDays}d)</span><span className="text-stone-700 font-medium">{formatNPR(guide)}</span></div>
+                  <div className="flex justify-between"><span className="text-stone-400">Permits</span><span className="text-stone-700 font-medium">{formatNPR(permits)}</span></div>
                   <div className="flex justify-between"><span className="text-stone-400">Duration</span><span className="text-stone-700">{t.minDays}–{t.maxDays} days</span></div>
                   <div className="flex justify-between"><span className="text-stone-400">Max alt.</span><span className="text-stone-700">{t.altitude}</span></div>
                 </div>
@@ -154,7 +155,7 @@ export default function PriceCompare({ trekPrices, guideTiers, seasons }) {
                 <div className="pt-2 border-t border-stone-200">
                   <div className="text-[11px] text-stone-400 mb-0.5">Avg. total estimate</div>
                   <div className="text-[1.15rem] font-serif font-bold" style={{ color: isLowest ? "#2D6A4F" : "#C05621" }}>
-                    ${total.toLocaleString()}
+                    {formatNPR(total)}
                   </div>
                 </div>
 

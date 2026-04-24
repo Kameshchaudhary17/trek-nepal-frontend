@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import authService from "../../services/api";
+import { getSocket } from "../../services/socket";
+import NotificationBell from "./NotificationBell";
 
 const NAV_LINKS = [
   { label: "Treks",      to: "/treks"      },
@@ -53,6 +55,13 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  // Open a socket.io connection while logged in. NotificationBell + ChatModal
+  // subscribe to events on this same socket. No polling needed anymore.
+  useEffect(() => {
+    if (!token) return;
+    getSocket();
+  }, [token]);
+
   return (
     <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? "bg-white border-b border-stone-200 shadow-sm" : "bg-white/95 backdrop-blur-sm border-b border-stone-200"}`}>
       <div className="max-w-[1200px] mx-auto px-5 sm:px-8 h-[66px] flex items-center justify-between">
@@ -90,14 +99,16 @@ export default function Navbar() {
         {/* Desktop right side */}
         <div className="hidden md:flex items-center gap-2">
           {token ? (
-            /* ── Avatar dropdown ── */
+            /* ── Notification bell + avatar dropdown ── */
+            <>
+            <NotificationBell />
             <div className="relative" ref={dropdownRef}>
               <button
                 onClick={() => setDropdownOpen((v) => !v)}
-                className="flex items-center gap-2.5 pl-1.5 pr-3 py-1.5 rounded-xl border border-stone-200 hover:border-stone-300 hover:bg-stone-50 transition-all group"
+                className="relative flex items-center gap-2.5 pl-1.5 pr-3 py-1.5 rounded-xl border border-stone-200 hover:border-stone-300 hover:bg-stone-50 transition-all group"
               >
                 {/* Avatar */}
-                <div className="w-7 h-7 rounded-lg bg-forest-500 flex items-center justify-center text-white font-serif font-bold text-[11px] shrink-0">
+                <div className="relative w-7 h-7 rounded-lg bg-forest-500 flex items-center justify-center text-white font-serif font-bold text-[11px] shrink-0">
                   {initials}
                 </div>
                 <div className="text-left">
@@ -148,6 +159,7 @@ export default function Navbar() {
                 </div>
               )}
             </div>
+            </>
           ) : (
             <>
               <Link to="/login" className="px-4 py-2 text-[14px] text-stone-700 hover:text-stone-900 border border-stone-300 rounded-lg font-medium transition-all hover:border-stone-400 hover:bg-stone-50">

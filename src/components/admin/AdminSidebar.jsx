@@ -5,6 +5,7 @@ const NAV_ITEMS = [
   { id: "overview", label: "Overview",           icon: OverviewIcon },
   { id: "guides",   label: "Guide Verification", icon: ShieldIcon   },
   { id: "users",    label: "Users",              icon: UsersIcon    },
+  { id: "bookings", label: "Bookings",           icon: BookingsIcon },
   { id: "treks",    label: "Trek Routes",        icon: TreksIcon    },
   { id: "pricing",  label: "Pricing",            icon: PricingIcon  },
   { id: "settings", label: "Settings",           icon: SettingsIcon },
@@ -146,6 +147,15 @@ function SettingsIcon({ active }) {
     <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
       <circle cx="8" cy="8" r="2" stroke={active ? "#2D6A4F" : "currentColor"} strokeWidth="1.3" />
       <path d="M8 1v2M8 13v2M1 8h2M13 8h2M2.93 2.93l1.41 1.41M11.66 11.66l1.41 1.41M2.93 13.07l1.41-1.41M11.66 4.34l1.41-1.41" stroke={active ? "#2D6A4F" : "currentColor"} strokeWidth="1.3" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function BookingsIcon({ active }) {
+  return (
+    <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
+      <rect x="2" y="3" width="12" height="11" rx="1.5" stroke={active ? "#2D6A4F" : "currentColor"} strokeWidth="1.3" />
+      <path d="M5 1v4M11 1v4M2 7h12" stroke={active ? "#2D6A4F" : "currentColor"} strokeWidth="1.3" strokeLinecap="round" />
     </svg>
   );
 }

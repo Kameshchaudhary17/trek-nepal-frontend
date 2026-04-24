@@ -8,6 +8,7 @@ import UsersSection from "../components/admin/UsersSection";
 import PricingSection from "../components/admin/PricingSection";
 import SettingsSection from "../components/admin/SettingsSection";
 import TreksSection from "../components/admin/TreksSection";
+import BookingsSection from "../components/admin/BookingsSection";
 
 const EMPTY_STATS = {
   totalGuides: 0,
@@ -145,10 +146,15 @@ export default function AdminDashboard() {
     }
   }
 
-  async function rejectGuide(id) {
+  async function rejectGuide(id, reason) {
+    const trimmed = (reason || "").trim();
+    if (!trimmed) {
+      showToast("Rejection needs a reason — it's emailed to the guide.", "error");
+      return;
+    }
     try {
       const fromVerified = guides.find((g) => g._id === id)?.status === "verified";
-      await adminService.setGuideStatus(id, "rejected");
+      await adminService.setGuideStatus(id, "rejected", trimmed);
       setGuides((prev) => prev.filter((g) => g._id !== id));
       setGuideCounts((c) => ({
         ...c,
@@ -156,9 +162,9 @@ export default function AdminDashboard() {
         verified: fromVerified ? Math.max(0, c.verified - 1) : c.verified,
         rejected: c.rejected + 1,
       }));
-      showToast("Guide rejected.", "error");
-    } catch {
-      showToast("Failed to reject guide.", "error");
+      showToast("Guide rejected and notified by email.", "error");
+    } catch (err) {
+      showToast(err?.response?.data?.message || "Failed to reject guide.", "error");
     }
   }
 
@@ -243,6 +249,7 @@ export default function AdminDashboard() {
                 onSearch={handleTrekkerSearch}
               />
             )}
+            {activeTab === "bookings" && <BookingsSection />}
             {activeTab === "pricing" && <PricingSection showToast={showToast} />}
             {activeTab === "treks"    && <TreksSection showToast={showToast} />}
             {activeTab === "settings" && <SettingsSection />}

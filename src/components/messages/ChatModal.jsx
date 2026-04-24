@@ -1,7 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { messageService } from "../../services/api";
+import { getSocket } from "../../services/socket";
 
-const POLL_MS = 15000;
+/* Poll acts as a fallback if the socket drops. Under normal operation
+   the socket delivers messages in real time and this fires rarely. */
+const POLL_MS = 45000;
 
 function meId() {
   try {
@@ -37,6 +40,8 @@ export default function ChatModal({ booking, onClose }) {
       const { messages: list } = await messageService.list(booking._id);
       setMessages(list);
       if (list.length) lastAtRef.current = list[list.length - 1].createdAt;
+      // Render succeeded — now it's safe to tell the server they've been seen.
+      messageService.markRead(booking._id).catch(() => {});
     } catch (err) {
       setError(err?.response?.data?.message || "Couldn't load messages.");
     }
@@ -49,6 +54,7 @@ export default function ChatModal({ booking, onClose }) {
       if (newOnes.length) {
         setMessages((prev) => [...prev, ...newOnes]);
         lastAtRef.current = newOnes[newOnes.length - 1].createdAt;
+        messageService.markRead(booking._id).catch(() => {});
       }
     } catch {
       /* silent on poll errors */
@@ -57,10 +63,48 @@ export default function ChatModal({ booking, onClose }) {
 
   useEffect(() => {
     loadInitial();
+
+    // Real-time: join the booking's room, listen for new messages.
+    const socket = getSocket();
+    let cleanupSocket = () => {};
+    if (socket) {
+      socket.emit("booking:join", booking._id);
+      const onNew = (msg) => {
+        if (!msg?.booking) return;
+        if (msg.booking.toString?.() !== booking._id && msg.booking !== booking._id) return;
+        setMessages((prev) => {
+          // Dedupe — socket can race with the POST response that already appended locally.
+          if (prev.some((m) => m._id === msg._id)) return prev;
+          return [...prev, msg];
+        });
+        lastAtRef.current = msg.createdAt;
+        // Someone else sent a message to us → mark read since the chat is open.
+        if (msg.from?._id !== meUserId) {
+          messageService.markRead(booking._id).catch(() => {});
+        }
+      };
+      socket.on("message:new", onNew);
+      cleanupSocket = () => {
+        socket.off("message:new", onNew);
+        socket.emit("booking:leave", booking._id);
+      };
+    }
+
+    // Safety-net poll — rare since socket is primary.
     const id = setInterval(pollNew, POLL_MS);
-    return () => clearInterval(id);
+    return () => {
+      cleanupSocket();
+      clearInterval(id);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [booking._id]);
+
+  // Close on Escape
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === "Escape") onClose?.(); };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose]);
 
   useEffect(() => {
     if (listRef.current) {
@@ -75,7 +119,13 @@ export default function ChatModal({ booking, onClose }) {
     setError("");
     try {
       const { message } = await messageService.send(booking._id, text.trim());
-      setMessages((prev) => [...prev, message]);
+      // Dedup — the socket also delivers this message back to the sender's
+      // own client (sender is a member of the booking room). Whichever path
+      // wins the race adds the message once; the other is a no-op.
+      setMessages((prev) => {
+        if (prev.some((m) => m._id === message._id)) return prev;
+        return [...prev, message];
+      });
       lastAtRef.current = message.createdAt;
       setText("");
     } catch (err) {

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { treksService } from "../../services/api";
 import ImageUpload from "../ui/ImageUpload";
+import { formatNPR } from "../../utils/money";
 
 const DIFFICULTIES = ["Easy", "Moderate", "Moderate–Hard", "Hard"];
 const REGIONS = ["Khumbu", "Gandaki", "Bagmati", "Eastern Nepal", "Karnali", "Mustang", "Other"];
@@ -142,7 +143,7 @@ function TrekForm({ initial, onSave, onCancel, saving }) {
           <Input value={form.bestMonths} onChange={(e) => set("bestMonths", e.target.value)} placeholder="Oct, Apr" />
         </div>
         <div>
-          <Label required>Guide From ($)</Label>
+          <Label required>Guide From (Rs.)</Label>
           <Input type="number" value={form.guideFrom} onChange={(e) => set("guideFrom", e.target.value)} placeholder="400" />
         </div>
       </div>
@@ -402,7 +403,7 @@ export default function TreksSection({ showToast }) {
                     </td>
                     <td className="px-4 py-3.5 text-stone-600">{trek.minDays}–{trek.maxDays}d</td>
                     <td className="px-4 py-3.5 text-stone-600">{trek.altitude}</td>
-                    <td className="px-4 py-3.5 font-semibold text-forest-600">${trek.guideFrom}</td>
+                    <td className="px-4 py-3.5 font-semibold text-forest-600">{formatNPR(trek.guideFrom)}</td>
                     <td className="px-4 py-3.5">
                       <div className="flex items-center gap-2">
                         <button

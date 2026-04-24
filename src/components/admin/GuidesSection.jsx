@@ -68,6 +68,8 @@ export default function GuidesSection({ guides, loading, filter, setFilter, coun
 
 function GuideRow({ guide, onVerify, onReject, onRestore }) {
   const [expanded, setExpanded] = useState(false);
+  const [rejecting, setRejecting] = useState(false);
+  const [reasonText, setReasonText] = useState("");
 
   const name = guide.user?.fullName || "—";
   const email = guide.user?.email || "—";
@@ -111,13 +113,13 @@ function GuideRow({ guide, onVerify, onReject, onRestore }) {
               <button onClick={() => onVerify(guide._id)} className="px-3 py-1.5 rounded-lg bg-forest-50 border border-forest-200 text-forest-700 text-[12px] font-medium hover:bg-forest-100 transition-all">
                 Approve
               </button>
-              <button onClick={() => onReject(guide._id)} className="px-3 py-1.5 rounded-lg bg-red-50 border border-red-200 text-red-600 text-[12px] font-medium hover:bg-red-100 transition-all">
+              <button onClick={() => { setRejecting(true); setReasonText(""); }} className="px-3 py-1.5 rounded-lg bg-red-50 border border-red-200 text-red-600 text-[12px] font-medium hover:bg-red-100 transition-all">
                 Reject
               </button>
             </>
           )}
           {guide.status === "verified" && (
-            <button onClick={() => onReject(guide._id)} className="px-3 py-1.5 rounded-lg bg-stone-100 border border-stone-200 text-stone-500 text-[12px] hover:border-red-300 hover:text-red-600 hover:bg-red-50 transition-all">
+            <button onClick={() => { setRejecting(true); setReasonText(""); }} className="px-3 py-1.5 rounded-lg bg-stone-100 border border-stone-200 text-stone-500 text-[12px] hover:border-red-300 hover:text-red-600 hover:bg-red-50 transition-all">
               Revoke
             </button>
           )}
@@ -145,6 +147,47 @@ function GuideRow({ guide, onVerify, onReject, onRestore }) {
           <Detail label="Specialty" value={guide.specialty || "—"} />
           <Detail label="Region" value={guide.region} />
           <Detail label="Status" value={(guide.status || "pending").charAt(0).toUpperCase() + (guide.status || "pending").slice(1)} />
+          {guide.status === "rejected" && guide.rejectionReason && (
+            <div className="sm:col-span-3">
+              <p className="text-[10px] uppercase tracking-wide text-stone-400 mb-0.5">Rejection reason</p>
+              <p className="text-[12.5px] text-stone-700 whitespace-pre-wrap">{guide.rejectionReason}</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {rejecting && (
+        <div className="fixed inset-0 z-[120] bg-black/40 flex items-center justify-center p-4" onClick={() => setRejecting(false)}>
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6" onClick={(e) => e.stopPropagation()}>
+            <h3 className="font-serif text-[1.05rem] font-semibold text-stone-900 mb-1">Reject {name}?</h3>
+            <p className="text-[12.5px] text-stone-500 mb-4">This note is emailed to the guide. They can address it and re-apply.</p>
+            <textarea
+              value={reasonText}
+              onChange={(e) => setReasonText(e.target.value)}
+              rows={4}
+              maxLength={1000}
+              placeholder="e.g. License number could not be verified against NTB records. Please re-upload a clearer photo."
+              className="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2.5 text-[13px] text-stone-800 outline-none focus:border-forest-400 focus:bg-white focus:ring-2 focus:ring-forest-100 resize-none"
+            />
+            <div className="flex justify-between items-center mt-1 mb-4">
+              <span className="text-[11px] text-stone-400">{reasonText.length}/1000</span>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setRejecting(false)}
+                className="flex-1 px-4 py-2.5 rounded-xl border border-stone-200 text-stone-600 text-[13px] font-medium hover:bg-stone-50"
+              >
+                Cancel
+              </button>
+              <button
+                disabled={!reasonText.trim()}
+                onClick={() => { onReject(guide._id, reasonText.trim()); setRejecting(false); }}
+                className="flex-[2] px-4 py-2.5 rounded-xl bg-red-500 text-white text-[13px] font-semibold hover:bg-red-600 disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                Reject &amp; notify
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

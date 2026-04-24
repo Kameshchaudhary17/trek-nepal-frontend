@@ -185,7 +185,7 @@ export default function Pricing() {
       {/* ── Base prices table ── */}
       <div className="py-20 sm:py-24 border-t border-stone-100">
         <Wrap>
-          <SectionHead eyebrow="Admin-set rates" title="Trek base pricing" sub="Set and maintained by the platform admin. All costs are in USD per trekker." />
+          <SectionHead eyebrow="Admin-set rates" title="Trek base pricing" sub="Set and maintained by the platform admin. All costs are in NPR per trekker." />
           {loading ? <TableSkeleton /> : error ? (
             <div className="p-6 border border-red-100 rounded-lg text-red-600 text-center text-[13.5px]">{error}</div>
           ) : (

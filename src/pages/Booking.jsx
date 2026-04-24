@@ -10,11 +10,19 @@ import { formatNPR } from "../utils/money";
 const STATUS_TABS = ["All", "Pending", "Confirmed", "Rejected", "Cancelled"];
 
 const STATUS_BADGE = {
-  pending:   "bg-amber-50 border border-amber-200 text-amber-700",
-  confirmed: "bg-forest-50 border border-forest-200 text-forest-700",
-  rejected:  "bg-red-50 border border-red-200 text-red-600",
-  cancelled: "bg-stone-100 border border-stone-200 text-stone-500",
-  completed: "bg-blue-50 border border-blue-200 text-blue-700",
+  pending:   { cls: "bg-amber-50 border border-amber-200 text-amber-700",   label: "Awaiting guide" },
+  confirmed: { cls: "bg-forest-50 border border-forest-200 text-forest-700", label: "Guide confirmed" },
+  rejected:  { cls: "bg-red-50 border border-red-200 text-red-600",         label: "Guide declined" },
+  cancelled: { cls: "bg-stone-100 border border-stone-200 text-stone-500",  label: "Cancelled" },
+  completed: { cls: "bg-blue-50 border border-blue-200 text-blue-700",      label: "Completed" },
+};
+
+const PAY_BADGE = {
+  unpaid:     { cls: "bg-amber-50 border border-amber-200 text-amber-700",   label: "Unpaid" },
+  processing: { cls: "bg-sky-50 border border-sky-200 text-sky-700",         label: "Processing" },
+  paid:       { cls: "bg-forest-50 border border-forest-200 text-forest-700", label: "Paid" },
+  failed:     { cls: "bg-red-50 border border-red-200 text-red-600",         label: "Payment failed" },
+  refunded:   { cls: "bg-violet-50 border border-violet-200 text-violet-700", label: "Refunded" },
 };
 
 function formatDate(dateStr) {
@@ -48,9 +56,10 @@ function GuideAvatar({ guide }) {
 }
 
 function StatusBadge({ status }) {
+  const s = STATUS_BADGE[status] || STATUS_BADGE.pending;
   return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11.5px] font-medium capitalize ${STATUS_BADGE[status] || STATUS_BADGE.pending}`}>
-      {status}
+    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11.5px] font-medium ${s.cls}`}>
+      {s.label}
     </span>
   );
 }
@@ -78,9 +87,11 @@ export default function Booking() {
   const [activeTab,  setActiveTab]  = useState("All");
   const [cancelling, setCancelling] = useState(null);
   const [payingFor,    setPayingFor]   = useState(null);
-  const [reviewingFor, setReviewingFor] = useState(null);
+  const [reviewingFor, setReviewingFor] = useState(null);   // { booking, existing? }
   const [chattingWith, setChattingWith] = useState(null);
-  const [reviewedIds,  setReviewedIds]  = useState(new Set());
+  // bookingId → review object. Absence means "not reviewed yet".
+  const [reviewsByBooking, setReviewsByBooking] = useState({});
+  const [deletingReview, setDeletingReview]     = useState(null);
 
   /* ── Auth guard ── */
   useEffect(() => {
@@ -90,27 +101,58 @@ export default function Booking() {
     const parsed = JSON.parse(stored);
     if (parsed.role === "guide") { navigate("/guide/dashboard"); return; }
 
-    bookingService.getMyBookings()
-      .then(async (res) => {
+    async function loadAll() {
+      try {
+        const res = await bookingService.getMyBookings();
         const list = res.bookings || [];
         setBookings(list);
-        // Pre-check which completed bookings already have reviews so we can hide the CTA.
         const completed = list.filter((b) => b.status === "completed");
         const results = await Promise.all(
           completed.map((b) =>
-            reviewService.forBooking(b._id).then((r) => (r.review ? b._id : null)).catch(() => null)
+            reviewService.forBooking(b._id)
+              .then((r) => (r.review ? [b._id, r.review] : null))
+              .catch(() => null)
           )
         );
-        setReviewedIds(new Set(results.filter(Boolean)));
-      })
-      .catch(() => setBookings([]))
-      .finally(() => setLoading(false));
+        setReviewsByBooking(Object.fromEntries(results.filter(Boolean)));
+      } catch {
+        setBookings([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadAll();
   }, [navigate]);
 
   function refreshBookings() {
     bookingService.getMyBookings()
       .then((res) => setBookings(res.bookings || []))
       .catch(() => {});
+  }
+
+  function isReviewEditable(review) {
+    if (!review) return false;
+    // Date.now() is intentionally called during render — the exact staleness
+    // of the 48 h window doesn't need to be perfectly stable frame-to-frame.
+    // eslint-disable-next-line react-hooks/purity
+    return Date.now() - new Date(review.createdAt).getTime() < 48 * 60 * 60 * 1000;
+  }
+
+  async function handleDeleteReview(bookingId) {
+    if (!window.confirm("Delete your review? This cannot be undone.")) return;
+    setDeletingReview(bookingId);
+    try {
+      await reviewService.remove(bookingId);
+      setReviewsByBooking((prev) => {
+        const next = { ...prev };
+        delete next[bookingId];
+        return next;
+      });
+    } catch (err) {
+      alert(err?.response?.data?.message || "Couldn't delete review.");
+    } finally {
+      setDeletingReview(null);
+    }
   }
 
   async function handleCancel(bookingId) {
@@ -252,7 +294,19 @@ export default function Booking() {
                           )}
                           <div className="text-[12px] text-stone-400">{guide?.specialty || guide?.region || "—"}</div>
                         </div>
-                        <StatusBadge status={booking.status} />
+                        <div className="flex flex-col items-end gap-1">
+                          <StatusBadge status={booking.status} />
+                          {/* Payment pill — only relevant once the guide has confirmed.
+                              Before that, there's nothing to pay so the label would be noise. */}
+                          {["confirmed", "completed"].includes(booking.status) && (() => {
+                            const p = PAY_BADGE[booking.paymentStatus] || PAY_BADGE.unpaid;
+                            return (
+                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11.5px] font-medium ${p.cls}`}>
+                                {p.label}
+                              </span>
+                            );
+                          })()}
+                        </div>
                       </div>
 
                       {/* Route + dates */}
@@ -276,6 +330,46 @@ export default function Booking() {
                           </div>
                         )}
                       </div>
+
+                      {/* Cost breakdown — collapsible. Only renders if the
+                          backend actually stored a breakdown (older bookings
+                          might not have one). */}
+                      {booking.costBreakdown && booking.costBreakdown.subtotal > 0 && (
+                        <details className="mt-3 group">
+                          <summary className="cursor-pointer text-[11.5px] text-stone-500 hover:text-stone-700 transition-colors list-none flex items-center gap-1.5 select-none">
+                            <svg width="10" height="10" viewBox="0 0 12 12" fill="none" className="transition-transform group-open:rotate-90 shrink-0">
+                              <path d="M4 2l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                            Cost breakdown
+                          </summary>
+                          <div className="mt-2 px-3 py-2.5 rounded-xl bg-stone-50 border border-stone-200 text-[12px] space-y-1 tabular-nums">
+                            <div className="flex justify-between">
+                              <span className="text-stone-500">
+                                {formatNPR(booking.ratePerDay)} × {booking.days} day{booking.days !== 1 ? "s" : ""}
+                              </span>
+                              <span className="text-stone-700">{formatNPR(booking.costBreakdown.base)}</span>
+                            </div>
+                            {booking.costBreakdown.seasonMultiplier !== 1 && (
+                              <div className="flex justify-between">
+                                <span className="text-stone-500 capitalize">
+                                  {booking.costBreakdown.seasonId} season (×{booking.costBreakdown.seasonMultiplier})
+                                </span>
+                                <span className="text-stone-700">{formatNPR(booking.costBreakdown.subtotal)}</span>
+                              </div>
+                            )}
+                            {booking.costBreakdown.platformFee > 0 && (
+                              <div className="flex justify-between">
+                                <span className="text-stone-500">Platform fee ({booking.costBreakdown.platformFeePct}%)</span>
+                                <span className="text-stone-700">{formatNPR(booking.costBreakdown.platformFee)}</span>
+                              </div>
+                            )}
+                            <div className="flex justify-between pt-1.5 mt-1.5 border-t border-stone-200">
+                              <span className="font-semibold text-stone-700">Total</span>
+                              <span className="font-bold text-terra-500">{formatNPR(booking.totalCost)}</span>
+                            </div>
+                          </div>
+                        </details>
+                      )}
 
                       {/* Guide note */}
                       {booking.guideNote && (
@@ -316,24 +410,50 @@ export default function Booking() {
                           </button>
                         </div>
                       )}
-                      {booking.status === "completed" && !reviewedIds.has(booking._id) && (
+                      {booking.status === "completed" && !reviewsByBooking[booking._id] && (
                         <div className="mt-3">
                           <button
-                            onClick={() => setReviewingFor(booking)}
-                            className="px-4 py-1.5 rounded-xl text-[12.5px] font-semibold bg-terra-500 text-white hover:opacity-90 transition-opacity"
+                            onClick={() => setReviewingFor({ booking })}
+                            className="px-4 py-1.5 rounded-xl text-[12.5px] font-semibold hover:opacity-90 transition-opacity"
                             style={{ background: "#e0b874", color: "#1f2937" }}
                           >
                             Leave a review
                           </button>
                         </div>
                       )}
-                      {booking.status === "completed" && reviewedIds.has(booking._id) && (
-                        <div className="mt-3">
-                          <span className="px-3 py-1.5 rounded-xl text-[12px] font-semibold bg-stone-100 border border-stone-200 text-stone-500">
-                            Review submitted
-                          </span>
-                        </div>
-                      )}
+                      {booking.status === "completed" && reviewsByBooking[booking._id] && (() => {
+                        const rv = reviewsByBooking[booking._id];
+                        const editable = isReviewEditable(rv);
+                        return (
+                          <div className="mt-3 flex flex-wrap items-center gap-2">
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12px] font-semibold bg-stone-100 border border-stone-200 text-stone-600">
+                              <span style={{ color: "#e0b874" }}>{"★".repeat(rv.rating)}</span>
+                              <span className="text-stone-400">{"★".repeat(5 - rv.rating)}</span>
+                              <span className="ml-1">Your review</span>
+                            </span>
+                            {editable ? (
+                              <>
+                                <button
+                                  onClick={() => setReviewingFor({ booking, existing: rv })}
+                                  className="px-3 py-1.5 rounded-xl text-[12px] font-semibold border border-stone-200 text-stone-700 hover:bg-stone-50 transition-colors"
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  disabled={deletingReview === booking._id}
+                                  onClick={() => handleDeleteReview(booking._id)}
+                                  className="px-3 py-1.5 rounded-xl text-[12px] font-semibold border border-red-200 text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  {deletingReview === booking._id ? "Deleting…" : "Delete"}
+                                </button>
+                                <span className="text-[11px] text-stone-400">Edit window: 48 h from submission</span>
+                              </>
+                            ) : (
+                              <span className="text-[11px] text-stone-400">Edit window expired</span>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
                 </div>
@@ -356,10 +476,17 @@ export default function Booking() {
 
       {reviewingFor && (
         <ReviewModal
-          booking={reviewingFor}
+          booking={reviewingFor.booking}
+          existing={reviewingFor.existing || null}
           onClose={() => setReviewingFor(null)}
           onSubmitted={() => {
-            setReviewedIds((prev) => new Set(prev).add(reviewingFor._id));
+            // Refetch so we capture the fresh createdAt (editable window resets with each PATCH timestamp? no — only on create).
+            const id = reviewingFor.booking._id;
+            reviewService.forBooking(id)
+              .then((r) => {
+                if (r.review) setReviewsByBooking((prev) => ({ ...prev, [id]: r.review }));
+              })
+              .catch(() => {});
             setReviewingFor(null);
           }}
         />
